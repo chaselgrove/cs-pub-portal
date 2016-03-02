@@ -1,0 +1,54 @@
+#!/usr/bin/python
+
+import sys
+import os
+import json
+import httplib
+import urllib
+import dateutil.parser
+
+progname = os.path.basename(sys.argv[0])
+
+if len(sys.argv) != 2:
+    print 'usage: %s <PubMed Central ID>' % progname
+    sys.exit(1)
+
+pmc_id = sys.argv[1]
+pmc_url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/%s' % pmc_id
+
+conn = httplib.HTTPSConnection('hypothes.is')
+url = '/api/search?%s' % urllib.urlencode({'uri': pmc_url})
+#url = '/search?uri=http://www.ncbi.nlm.nih.gov/pmc/articles/%s' % pmc_id
+conn.request('GET', url, '', {'Accept': 'application/json'})
+response = conn.getresponse()
+if response.status != 200:
+    sys.stderr.write('%s: error getting annotations for %s\n' % (progname, pmc_id))
+    sys.exit(1)
+data = response.read()
+obj = json.loads(data)
+
+import pprint
+#pprint.pprint(obj)
+print obj.keys()
+for o2 in obj['rows']:
+    print '- %s --------------------------------------------------' % o2['id']
+    print dateutil.parser.parse(o2['created'])
+    print dateutil.parser.parse(o2['updated'])
+    print o2['user']
+    pprint.pprint(o2['tags'])
+    print o2['text']
+    for t in o2['target']:
+        if pmc_url not in t['scope']:
+            continue
+        for sel in t['selector']:
+            if 'exact' in sel:
+                print sel['exact']
+                break
+        break
+    print
+
+conn.close()
+
+sys.exit(0)
+
+# eof
