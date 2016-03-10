@@ -7,7 +7,8 @@ app = flask.Flask(__name__)
 def index():
     pmc_id = flask.request.args.get('pmc_id')
     if not pmc_id:
-        return flask.render_template('index.tmpl')
+        return flask.render_template('index.tmpl', 
+                                     target=flask.request.script_root)
     return flask.redirect(flask.url_for('publication', pmc_id=pmc_id))
 
 @app.route('/<pmc_id>')
