@@ -272,6 +272,7 @@ class Publication:
     def __init__(self, data):
         self.errors = []
         self._parse_data(data)
+        self._check_links()
         self.pmc_id = None
         return
 
@@ -350,6 +351,57 @@ class Publication:
             raise MarkupError('duplicate ID %s %s' % (ent.id, ident))
         else:
             d[ent.id] = ent
+        return
+
+    def _check_links(self):
+        """check inter-entity links"""
+        for ai in self.acquisitions.itervalues():
+            if not ai.acquisitioninstrument:
+                ai.errors.append(MarkupError('no acquisition instrument given'))
+            elif ai.acquisitioninstrument not in self.acquisitioninstruments:
+                fmt = 'undefined acquisition instrument %s'
+                err = MarkupError(fmt % ai.acquisitioninstrument)
+                ai.errors.append(err)
+        for d in self.data.itervalues():
+            if not d.subjectgroup:
+                d.errors.append(MarkupError('no subject group given'))
+            elif d.subjectgroup not in self.subjectgroups:
+                err = MarkupError('undefined subject group %s' % d.subjectgroup)
+                d.errors.append(err)
+            if not d.acquisition:
+                d.errors.append(MarkupError('no acquisition given'))
+            elif d.acquisition not in self.data:
+                err = MarkupError('undefined acquisition %s' % d.acquisition)
+                d.errors.append(err)
+        for o in self.observations.itervalues():
+            if not o.analysisworkflow:
+                o.errors.append(MarkupError('no analysis workflow given'))
+            elif o.analysisworkflow not in self.analysisworkflows:
+                fmt = 'undefined analysis workflow %s'
+                err = MarkupError(fmt % o.analysisworkflow)
+                o.errors.append(err)
+            if not o.data:
+                o.errors.append(MarkupError('no data given'))
+            elif o.data not in self.data:
+                err = MarkupError('undefined data %s' % o.data)
+                o.errors.append(err)
+        for ma in self.modelapplications.itervalues():
+            if not ma.model:
+                ma.errors.append(MarkupError('no model given'))
+            elif ma.model not in self.models:
+                ma.errors.append(MarkupError('undefined model %s' % ma.model))
+            if not ma.observation:
+                ma.errors.append(MarkupError('no observation given'))
+            elif ma.observation not in self.observations:
+                err = MarkupError('undefined observation %s' % ma.observation)
+                ma.errors.append(err)
+        for r in self.results.itervalues():
+            if not r.modelapplication:
+                r.errors.append(MarkupError('no model application given'))
+            elif r.modelapplication not in self.modelapplications:
+                fmt = 'undefined model application %s'
+                err = MarkupError(fmt % r.modelapplication)
+                r.errors.append(err)
         return
 
     @staticmethod
