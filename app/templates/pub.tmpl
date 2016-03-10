@@ -5,7 +5,160 @@
 {% block body %}
 
 <p>
-PMC ID <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
+{% if pub.pmc_id %}
+    PMC ID <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
+{% endif %}
 </p>
+
+<p>
+{% if not pub.errors %}
+    <p>No errors</p>
+{% else %}
+    <h2>Errors</h2>
+    {% for error in pub.errors %}
+        <p>{{ error }}</p>
+    {% endfor %}
+{% endif %}
+</p>
+
+<h2>Subject Groups</h2>
+{% if not pub.subjectgroups %}
+    <p>None</p>
+{% else %}
+    {% for sg in pub.subjectgroups.itervalues() %}
+        {{ sg.id }}
+        <ul>
+            <li>ID: {{ sg.id }}</li>
+            <li>Diagnosis: {{ sg.diagnosis }}</li>
+            <li>Subjects: {{ sg.n_subjects }}</li>
+            <li>Age mean: {{ sg.age_mean }}</li>
+            <li>Age SD: {{ sg.age_std }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Acquisition Instruments</h2>
+{% if not pub.acquisitioninstruments %}
+    <p>None</p>
+{% else %}
+    {% for ai in pub.acquisitioninstruments.itervalues() %}
+        {{ ai.id }}
+        <ul>
+            <li>ID: {{ ai.id }}</li>
+            <li>Type: {{ ai.type }}</li>
+            <li>Location: {{ ai.location }}</li>
+            <li>Field: {{ ai.field }}</li>
+            <li>Manufacturer: {{ ai.manufacturer }}</li>
+            <li>Model: {{ ai.model }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Acquisitions</h2>
+{% if not pub.acquisitions %}
+    <p>None</p>
+{% else %}
+    {% for a in pub.acquisitions.itervalues() %}
+        {{ a.id }}
+        <ul>
+            <li>ID: {{ a.id }}</li>
+            <li>Type: {{ a.type }}</li>
+            <li>AcquisitionInstrument: {{ a.acquisitioninstrument }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Data</h2>
+{% if not pub.subjectgroups %}
+    <p>None</p>
+{% else %}
+    {% for d in pub.data.itervalues() %}
+        {{ d.id }}
+        <ul>
+            <li>ID: {{ d.id }}</li>
+            <li>URL: {{ d.url }}</li>
+            <li>DOI: {{ d.doi }}</li>
+            <li>Acquisition: {{ d.acquisition }}</li>
+            <li>SubjectGroup: {{ d.subjectgroup }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Analysis Workflows</h2>
+{% if not pub.analysisworkflows %}
+    <p>None</p>
+{% else %}
+    {% for aw in pub.analysisworkflows.itervalues() %}
+        {{ aw.id }}
+        <ul>
+            <li>ID: {{ aw.id }}</li>
+            <li>Method: {{ aw.method }}</li>
+            <li>MethodURL: {{ aw.methodurl }}</li>
+            <li>Software: {{ aw.software }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Observations</h2>
+{% if not pub.observations %}
+    <p>None</p>
+{% else %}
+    {% for o in pub.observations.itervalues() %}
+        {{ o.id }}
+        <ul>
+            <li>ID: {{ o.id }}</li>
+            <li>Data: {{ o.data }}</li>
+            <li>AnalysisWorkflow: {{ o.analysisworkflow }}</li>
+            <li>Meausure: {{ o.meausure }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Models</h2>
+{% if not pub.models %}
+    <p>None</p>
+{% else %}
+    {% for m in pub.models.itervalues() %}
+        {{ m.id }}
+        <ul>
+            <li>ID: {{ m.id }}</li>
+            <li>Variables: {{ m.variables }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Model Applications</h2>
+{% if not pub.modelapplications %}
+    <p>None</p>
+{% else %}
+    {% for m in pub.modelapplications.itervalues() %}
+        {{ m.id }}
+        <ul>
+            <li>ID: {{ m.id }}</li>
+            <li>Observation: {{ m.observation }}</li>
+            <li>Model: {{ m.model }}</li>
+            <li>URL: {{ m.url }}</li>
+            <li>Software: {{ m.software }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
+
+<h2>Results</h2>
+{% if not pub.results %}
+    <p>None</p>
+{% else %}
+    {% for r in pub.results.itervalues() %}
+        {{ r.id }}
+        <ul>
+            <li>ID: {{ r.id }}</li>
+            <li>Model Application: {{ r.modelapplication }}</li>
+            <li>Value: {{ r.value }}</li>
+            <li>Interaction Variables: {{ r.interactionvariables }}</li>
+            <li>F: {{ r.f }}</li>
+            <li>P: {{ r.p }}</li>
+            <li>Interpretation: {{ r.interpretation }}</li>
+        </ul>
+    {% endfor %}
+{% endif %}
 
 {% endblock %}
