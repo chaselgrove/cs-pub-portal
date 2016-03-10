@@ -26,6 +26,7 @@
     <p>None</p>
 {% else %}
     {% for sg in pub.subjectgroups.itervalues() %}
+        <a name="sg_{{ sg.id }}"></a>
         {{ sg.id }}
         {% if not sg.errors %}
             <p>No errors.</p>
@@ -50,6 +51,7 @@
     <p>None</p>
 {% else %}
     {% for ai in pub.acquisitioninstruments.itervalues() %}
+        <a name="ai_{{ ai.id }}"></a>
         {{ ai.id }}
         {% if not ai.errors %}
             <p>No errors.</p>
@@ -75,6 +77,7 @@
     <p>None</p>
 {% else %}
     {% for a in pub.acquisitions.itervalues() %}
+        <a name="a_{{ a.id }}"></a>
         {{ a.id }}
         {% if not a.errors %}
             <p>No errors.</p>
@@ -87,7 +90,11 @@
         <ul>
             <li>ID: {{ a.id }}</li>
             <li>Type: {{ a.type }}</li>
+            {% if a.acquisitioninstrument %}
+                <li>AcquisitionInstrument: <a href="#ai_{{ a.acquisitioninstrument }}">{{ a.acquisitioninstrument }}</a></li>
+            {% else %}
             <li>AcquisitionInstrument: {{ a.acquisitioninstrument }}</li>
+            {% endif %}
         </ul>
     {% endfor %}
 {% endif %}
@@ -97,6 +104,7 @@
     <p>None</p>
 {% else %}
     {% for d in pub.data.itervalues() %}
+        <a name="d_{{ d.id }}"></a>
         {{ d.id }}
         {% if not d.errors %}
             <p>No errors.</p>
@@ -108,10 +116,26 @@
         {% endif %}
         <ul>
             <li>ID: {{ d.id }}</li>
-            <li>URL: {{ d.url }}</li>
-            <li>DOI: {{ d.doi }}</li>
-            <li>Acquisition: {{ d.acquisition }}</li>
-            <li>SubjectGroup: {{ d.subjectgroup }}</li>
+            {% if d.subjectgroup %}
+                <li>SubjectGroup: <a href="#sg_{{ d.subjectgroup }}">{{ d.subjectgroup }}</a></li>
+            {% else %}
+                <li>SubjectGroup: {{ d.subjectgroup }}</li>
+            {% endif %}
+            {% if d.acquisition %}
+                <li>Acquisition: <a href="a_{{ d.acquisition }}">{{ d.acquisition }}</a></li>
+            {% else %}
+                <li>Acquisition: {{ d.acquisition }}</li>
+            {% endif %}
+            {% if d.url %}
+                <li>URL: <a href="{{ d.url }}">{{ d.url }}</li>
+            {% else %}
+                <li>URL: {{ d.url }}</li>
+            {% endif %}
+            {% if d.doi %}
+                <li>DOI: <a href="http://dx.doi.org/{{ d.doi }}">{{ d.doi }}</a></li>
+            {% else %}
+                <li>DOI: {{ d.doi }}</li>
+            {% endif %}
         </ul>
     {% endfor %}
 {% endif %}
@@ -121,6 +145,7 @@
     <p>None</p>
 {% else %}
     {% for aw in pub.analysisworkflows.itervalues() %}
+        <a name="aw_{{ aw.id }}"></a>
         {{ aw.id }}
         {% if not aw.errors %}
             <p>No errors.</p>
@@ -144,6 +169,7 @@
     <p>None</p>
 {% else %}
     {% for o in pub.observations.itervalues() %}
+        <a name="o_{{ o.id }}"></a>
         {{ o.id }}
         {% if not o.errors %}
             <p>No errors.</p>
@@ -155,8 +181,16 @@
         {% endif %}
         <ul>
             <li>ID: {{ o.id }}</li>
-            <li>Data: {{ o.data }}</li>
-            <li>AnalysisWorkflow: {{ o.analysisworkflow }}</li>
+            {% if o.data %}
+                <li>Data: <a href="#d_{{ o.data }}">{{ o.data }}</a></li>
+            {% else %}
+                <li>Data: {{ o.data }}</li>
+            {% endif %}
+            {% if o.analysisworkflow %}
+                <li>AnalysisWorkflow: <a href="#aw_{{ o.analysisworkflow }}">{{ o.analysisworkflow }}</a></li>
+            {% else %}
+                <li>AnalysisWorkflow: {{ o.analysisworkflow }}</li>
+            {% endif %}
             <li>Meausure: {{ o.meausure }}</li>
         </ul>
     {% endfor %}
@@ -167,6 +201,7 @@
     <p>None</p>
 {% else %}
     {% for m in pub.models.itervalues() %}
+        <a name="m_{{ m.id }}"></a>
         {{ m.id }}
         {% if not m.errors %}
             <p>No errors.</p>
@@ -188,6 +223,7 @@
     <p>None</p>
 {% else %}
     {% for ma in pub.modelapplications.itervalues() %}
+        <a name="ma_{{ ma.id }}"></a>
         {{ ma.id }}
         {% if not ma.errors %}
             <p>No errors.</p>
@@ -199,8 +235,16 @@
         {% endif %}
         <ul>
             <li>ID: {{ ma.id }}</li>
-            <li>Observation: {{ ma.observation }}</li>
-            <li>Model: {{ ma.model }}</li>
+            {% if ma.observation %}
+                <li>Observation: <a href="#o_{{ ma.observation }}">{{ ma.observation }}</a></li>
+            {% else %}
+                <li>Observation: {{ ma.observation }}</li>
+            {% endif %}
+            {% if ma.model %}
+                <li>Model: <a href="#m_{{ ma.model }}">{{ ma.model }}</a></li>
+            {% else %}
+                <li>Model: {{ ma.model }}</li>
+            {% endif %}
             <li>URL: {{ ma.url }}</li>
             <li>Software: {{ ma.software }}</li>
         </ul>
@@ -212,6 +256,7 @@
     <p>None</p>
 {% else %}
     {% for r in pub.results.itervalues() %}
+        <a name="r_{{ r.id }}"></a>
         {{ r.id }}
         {% if not r.errors %}
             <p>No errors.</p>
@@ -223,7 +268,11 @@
         {% endif %}
         <ul>
             <li>ID: {{ r.id }}</li>
-            <li>Model Application: {{ r.modelapplication }}</li>
+            {% if r.modelapplication %}
+                <li>Model Application: <a href="#ma_{{ r.modelapplication }}">{{ r.modelapplication }}</a></li>
+            {% else %}
+                <li>Model Application: {{ r.modelapplication }}</li>
+            {% endif %}
             <li>Value: {{ r.value }}</li>
             <li>Interaction Variables: {{ r.interactionvariables }}</li>
             <li>F: {{ r.f }}</li>
