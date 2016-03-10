@@ -5,7 +5,14 @@
 {% block body %}
 
 <p>
-Coming soon: the CANDI Share Publication Portal.
+This is the CANDI Share Publication Portal.
 </p>
+
+<form action="/pub" method="GET">
+PubMed Central ID:
+<input type="text" name="pmc_id" />
+<input type="submit"/>
+</form>
+
 
 {% endblock %}

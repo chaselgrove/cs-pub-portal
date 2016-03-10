@@ -1,0 +1,11 @@
+{% extends "base.tmpl" %}
+
+{% block title %}PMC {{ pub.pmc_id }} - CANDI Share Publication Portal{% endblock %}
+
+{% block body %}
+
+<p>
+PMC ID <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
+</p>
+
+{% endblock %}
