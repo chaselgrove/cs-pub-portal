@@ -27,6 +27,14 @@
 {% else %}
     {% for sg in pub.subjectgroups.itervalues() %}
         {{ sg.id }}
+        {% if not sg.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in sg.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ sg.id }}</li>
             <li>Diagnosis: {{ sg.diagnosis }}</li>
@@ -43,6 +51,14 @@
 {% else %}
     {% for ai in pub.acquisitioninstruments.itervalues() %}
         {{ ai.id }}
+        {% if not ai.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in ai.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ ai.id }}</li>
             <li>Type: {{ ai.type }}</li>
@@ -60,6 +76,14 @@
 {% else %}
     {% for a in pub.acquisitions.itervalues() %}
         {{ a.id }}
+        {% if not a.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in a.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ a.id }}</li>
             <li>Type: {{ a.type }}</li>
@@ -74,6 +98,14 @@
 {% else %}
     {% for d in pub.data.itervalues() %}
         {{ d.id }}
+        {% if not d.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in d.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ d.id }}</li>
             <li>URL: {{ d.url }}</li>
@@ -90,6 +122,14 @@
 {% else %}
     {% for aw in pub.analysisworkflows.itervalues() %}
         {{ aw.id }}
+        {% if not aw.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in aw.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ aw.id }}</li>
             <li>Method: {{ aw.method }}</li>
@@ -105,6 +145,14 @@
 {% else %}
     {% for o in pub.observations.itervalues() %}
         {{ o.id }}
+        {% if not o.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in o.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ o.id }}</li>
             <li>Data: {{ o.data }}</li>
@@ -120,6 +168,14 @@
 {% else %}
     {% for m in pub.models.itervalues() %}
         {{ m.id }}
+        {% if not m.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in m.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ m.id }}</li>
             <li>Variables: {{ m.variables }}</li>
@@ -131,14 +187,22 @@
 {% if not pub.modelapplications %}
     <p>None</p>
 {% else %}
-    {% for m in pub.modelapplications.itervalues() %}
-        {{ m.id }}
+    {% for ma in pub.modelapplications.itervalues() %}
+        {{ ma.id }}
+        {% if not ma.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in ma.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
-            <li>ID: {{ m.id }}</li>
-            <li>Observation: {{ m.observation }}</li>
-            <li>Model: {{ m.model }}</li>
-            <li>URL: {{ m.url }}</li>
-            <li>Software: {{ m.software }}</li>
+            <li>ID: {{ ma.id }}</li>
+            <li>Observation: {{ ma.observation }}</li>
+            <li>Model: {{ ma.model }}</li>
+            <li>URL: {{ ma.url }}</li>
+            <li>Software: {{ ma.software }}</li>
         </ul>
     {% endfor %}
 {% endif %}
@@ -149,6 +213,14 @@
 {% else %}
     {% for r in pub.results.itervalues() %}
         {{ r.id }}
+        {% if not r.errors %}
+            <p>No errors.</p>
+        {% else %}
+            <p>Errors:</p>
+            {% for error in r.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <ul>
             <li>ID: {{ r.id }}</li>
             <li>Model Application: {{ r.modelapplication }}</li>

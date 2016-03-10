@@ -26,24 +26,36 @@ class Entity:
             self.id = fields['id'][0]
         return
 
+    def _check_fields(self, fields, ident):
+        """check remaining fields after all known ones have been recorded"""
+        for key in fields:
+            if key not in ('id', 'hypothesisid', 'csentity'):
+                err = MarkupError('unknown field %s %s' % (key, ident))
+                self.errors.append(err)
+        return
+
 class SubjectGroup(Entity):
 
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
         if 'diagnosis' in fields:
             self.diagnosis = fields['diagnosis'][0]
+            del fields['diagnosis']
         else:
             self.diagnosis = None
         if 'nsubjects' in fields:
             self.n_subjects = fields['nsubjects'][0]
+            del fields['nsubjects']
         else:
             self.n_subjects = None
         if 'agemean' in fields:
             self.age_mean = fields['agemean'][0]
+            del fields['agemean']
         else:
             self.age_mean = None
         if 'agesd' in fields:
             self.age_sd = fields['agesd'][0]
+            del fields['agesd']
         else:
             self.age_sd = None
         return
@@ -54,22 +66,27 @@ class AcquisitionInstrument(Entity):
         Entity.__init__(self, fields, ident)
         if 'type' in fields:
             self.type = fields['type'][0]
+            del fields['type']
         else:
             self.type = None
         if 'location' in fields:
             self.location = fields['location'][0]
+            del fields['location']
         else:
             self.location = None
         if 'field' in fields:
             self.field = fields['field'][0]
+            del fields['field']
         else:
             self.field = None
         if 'manufacturer' in fields:
             self.manufacturer = fields['manufacturer'][0]
+            del fields['manufacturer']
         else:
             self.manufacturer = None
         if 'model' in fields:
             self.model = fields['model'][0]
+            del fields['model']
         else:
             self.model = None
         return
@@ -80,12 +97,15 @@ class Acquisition(Entity):
         Entity.__init__(self, fields, ident)
         if 'type' in fields:
             self.type = fields['type'][0]
+            del fields['type']
         else:
             self.type = None
         if 'acquisitioninstrument' in fields:
             self.acquisitioninstrument = fields['acquisitioninstrument'][0]
+            del fields['acquisitioninstrument']
         else:
             self.acquisitioninstrument = None
+        self._check_fields(fields, ident)
         return
 
 class Data(Entity):
@@ -94,18 +114,22 @@ class Data(Entity):
         Entity.__init__(self, fields, ident)
         if 'url' in fields:
             self.url = fields['url'][0]
+            del fields['url']
         else:
             self.url = None
         if 'doi' in fields:
             self.doi = fields['doi'][0]
+            del fields['doi']
         else:
             self.doi = None
         if 'acquisition' in fields:
             self.acquisition = fields['acquisition'][0]
+            del fields['acquisition']
         else:
             self.acquisition = None
         if 'subjectgroup' in fields:
             self.subjectgroup = fields['subjectgroup'][0]
+            del fields['subjectgroup']
         else:
             self.subjectgroup = None
         return
@@ -115,15 +139,18 @@ class AnalysisWorkflow(Entity):
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
         if 'method' in fields:
-            self.method = fields['method']
+            self.method = fields['method'][0]
+            del fields['method']
         else:
             self.method = None
         if 'methodurl' in fields:
-            self.methodurl = fields['methodurl']
+            self.methodurl = fields['methodurl'][0]
+            del fields['methodurl']
         else:
             self.methodurl = None
         if 'software' in fields:
-            self.software = fields['software']
+            self.software = fields['software'][0]
+            del fields['software']
         else:
             self.software = None
         return
@@ -134,14 +161,17 @@ class Observation(Entity):
         Entity.__init__(self, fields, ident)
         if 'data' in fields:
             self.data = fields['data']
+            del fields['data']
         else:
             self.data = None
         if 'analysisworkflow' in fields:
             self.analysisworkflow = fields['analysisworkflow'][0]
+            del fields['analysisworkflow']
         else:
             self.analysisworkflow = None
         if 'meausure' in fields:
             self.meausure = fields['meausure'][0]
+            del fields['meausure']
         else:
             self.meausure = None
         return
@@ -152,6 +182,7 @@ class Model(Entity):
         Entity.__init__(self, fields, ident)
         if 'Variable' in fields:
             self.variables = fields['Variable']
+            del fields['Variable']
         else:
             self.variables = None
         return
@@ -162,18 +193,22 @@ class ModelApplication(Entity):
         Entity.__init__(self, fields, ident)
         if 'observation' in fields:
             self.observation = fields['observation'][0]
+            del fields['observation']
         else:
             self.observation = None
         if 'model' in fields:
             self.model = fields['model'][0]
+            del fields['model']
         else:
             self.model = None
         if 'url' in fields:
             self.url = fields['url'][0]
+            del fields['url']
         else:
             self.url = None
         if 'software' in fields:
             self.software = fields['software'][0]
+            del fields['software']
         else:
             self.software = None
         return
@@ -184,26 +219,32 @@ class Result(Entity):
         Entity.__init__(self, fields, ident)
         if 'modelapplication' in fields:
             self.modelapplication = fields['modelapplication'][0]
+            del fields['modelapplication']
         else:
             self.modelapplication = None
         if 'value' in fields:
             self.value = fields['value'][0]
+            del fields['value']
         else:
             self.value = None
         if 'interactionvariable' in fields:
             self.interactionvariables = fields['interactionvariable']
+            del fields['interactionvariable']
         else:
             self.interactionvariable = None
         if 'f' in fields:
             self.f = fields['f'][0]
+            del fields['f']
         else:
             self.f = None
         if 'p' in fields:
             self.p = fields['p'][0]
+            del fields['p']
         else:
             self.p = None
         if 'interpretation' in fields:
             self.interpretation = fields['interpretation'][0]
+            del fields['interpretation']
         else:
             self.interpretation = None
         return
