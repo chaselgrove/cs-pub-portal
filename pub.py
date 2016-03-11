@@ -1,6 +1,7 @@
 import json
 import httplib
 import urllib
+import cgi
 
 class MarkupError:
 
@@ -17,6 +18,8 @@ class Entity:
 
     """base class for entities"""
 
+    multi_attrs = ()
+
     def __init__(self, fields, ident):
         self.errors = []
         if 'id' not in fields:
@@ -24,6 +27,18 @@ class Entity:
             self.id = None
         else:
             self.id = fields['id'][0]
+        return
+
+    def init2(self, fields):
+        for (an, key, _) in self.attributes:
+            if key in fields:
+                if an in self.multi_attrs:
+                    setattr(self, an, fields[key])
+                else:
+                    setattr(self, an, fields[key][0])
+                del fields[key]
+            else:
+                setattr(self, an, None)
         return
 
     def _check_fields(self, fields, ident):
@@ -34,230 +49,166 @@ class Entity:
                 self.errors.append(err)
         return
 
-class SubjectGroup(Entity):
-
-    # attribute, key, display
-    fields = (('diagnosis', 'diagnosis', 'Diagnosis'), 
-              ('n_subjects', 'nsubjects', 'Subjects'), 
-              ('age_mean', 'agemean', 'Age mean'), 
-              ('age_sd', 'agesd', 'Age SD'))
-
-    prefix = 'sg'
-
-    def __init__(self, fields, ident):
-        Entity.__init__(self, fields, ident)
-        for (an, key, _) in self.fields:
-            if key in fields:
-                setattr(self, an, fields[key][0])
-                del fields[key]
-            else:
-                setattr(self, an, None)
-        return
-
     def render(self):
         output = ''
-        output += '<a name="%s_%s"></a>\n' % (self.prefix, self.id)
         output += '<p>%s</p>\n' % self.id
         if not self.errors:
             output += '<p>No errors.</p>\n'
         else:
             output += '<p>Errors:</p>\n'
             for error in self.errors:
-                output += '<p>%s</p>\n' % str(error)
+                output += '<p>%s</p>\n' % cgi.escape(str(error))
         output += '<ul>\n'
-        output += '<li>ID: %s</li>\n' % self.id
-        for (an, _, display) in self.fields:
-            output += '<li>%s: %s</li>\n' % (display, getattr(self, an))
+        output += '<li>ID: %s</li>\n' % cgi.escape(self.id)
+        for (an, _, display) in self.attributes:
+            val = getattr(self, an)
+            if val is None:
+                disp_val = ''
+            elif isinstance(val, list):
+                parts = [ cgi.escape(el) for el in val ]
+                disp_val = ', '.join(parts)
+            else:
+                disp_val = cgi.escape(str(val))
+            output += '<li>%s: %s</li>\n' % (display, disp_val)
         output += '</ul>\n'
         return output
 
-class AcquisitionInstrument(Entity):
+class SubjectGroup(Entity):
+
+    prefix = 'sg'
+
+    # attribute, key, display
+    attributes = (('diagnosis', 'diagnosis', 'Diagnosis'), 
+                  ('n_subjects', 'nsubjects', 'Subjects'), 
+                  ('age_mean', 'agemean', 'Age mean'), 
+                  ('age_sd', 'agesd', 'Age SD'))
 
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'type' in fields:
-            self.type = fields['type'][0]
-            del fields['type']
-        else:
-            self.type = None
-        if 'location' in fields:
-            self.location = fields['location'][0]
-            del fields['location']
-        else:
-            self.location = None
-        if 'field' in fields:
-            self.field = fields['field'][0]
-            del fields['field']
-        else:
-            self.field = None
-        if 'manufacturer' in fields:
-            self.manufacturer = fields['manufacturer'][0]
-            del fields['manufacturer']
-        else:
-            self.manufacturer = None
-        if 'model' in fields:
-            self.model = fields['model'][0]
-            del fields['model']
-        else:
-            self.model = None
+        self.init2(fields)
+        self._check_fields(fields, ident)
+        return
+
+class AcquisitionInstrument(Entity):
+
+    prefix = 'ai'
+
+    attributes = (('type', 'type', 'Type'), 
+                  ('location', 'location', 'Location'), 
+                  ('field', 'field', 'Field'), 
+                  ('manufacturer', 'manufacturer', 'Manufacturer'), 
+                  ('model', 'model', 'Model'))
+
+    def __init__(self, fields, ident):
+        Entity.__init__(self, fields, ident)
+        self.init2(fields)
+        self._check_fields(fields, ident)
         return
 
 class Acquisition(Entity):
 
+    prefix = 'a'
+
+    attributes = (('type', 'type', 'type'), 
+                  ('acquisitioninstrument', 'acquisitioninstrument', 'Acquisition Instrument'))
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'type' in fields:
-            self.type = fields['type'][0]
-            del fields['type']
-        else:
-            self.type = None
-        if 'acquisitioninstrument' in fields:
-            self.acquisitioninstrument = fields['acquisitioninstrument'][0]
-            del fields['acquisitioninstrument']
-        else:
-            self.acquisitioninstrument = None
+        self.init2(fields)
         self._check_fields(fields, ident)
         return
 
 class Data(Entity):
 
+    prefix = 'd'
+
+    attributes = (('url', 'url', 'url'), 
+                  ('doi', 'doi', 'doi'), 
+                  ('acquisition', 'acquisition', 'acquisition'), 
+                  ('subjectgroup', 'subjectgroup', 'subjectgroup'))
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'url' in fields:
-            self.url = fields['url'][0]
-            del fields['url']
-        else:
-            self.url = None
-        if 'doi' in fields:
-            self.doi = fields['doi'][0]
-            del fields['doi']
-        else:
-            self.doi = None
-        if 'acquisition' in fields:
-            self.acquisition = fields['acquisition'][0]
-            del fields['acquisition']
-        else:
-            self.acquisition = None
-        if 'subjectgroup' in fields:
-            self.subjectgroup = fields['subjectgroup'][0]
-            del fields['subjectgroup']
-        else:
-            self.subjectgroup = None
+        self.init2(fields)
+        self._check_fields(fields, ident)
         return
 
 class AnalysisWorkflow(Entity):
 
+    prefix = 'aw'
+
+    attributes = (('method', 'method', 'Method'), 
+                  ('methodurl', 'methodurl', 'Method URL'), 
+                  ('software', 'software', 'Software'))
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'method' in fields:
-            self.method = fields['method'][0]
-            del fields['method']
-        else:
-            self.method = None
-        if 'methodurl' in fields:
-            self.methodurl = fields['methodurl'][0]
-            del fields['methodurl']
-        else:
-            self.methodurl = None
-        if 'software' in fields:
-            self.software = fields['software'][0]
-            del fields['software']
-        else:
-            self.software = None
+        self.init2(fields)
+        self._check_fields(fields, ident)
         return
 
 class Observation(Entity):
 
+    prefix = 'o'
+
+    attributes = (('data', 'data', 'Data'), 
+                  ('analysisworkflow', 'analysisworkflow', 'Analysis Workflow'), 
+                  ('measure', 'measure', 'Measure'))
+
+    multi_attrs = ('data', )
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'data' in fields:
-            self.data = fields['data']
-            del fields['data']
-        else:
-            self.data = None
-        if 'analysisworkflow' in fields:
-            self.analysisworkflow = fields['analysisworkflow'][0]
-            del fields['analysisworkflow']
-        else:
-            self.analysisworkflow = None
-        if 'meausure' in fields:
-            self.meausure = fields['meausure'][0]
-            del fields['meausure']
-        else:
-            self.meausure = None
+        self.init2(fields)
+        self._check_fields(fields, ident)
         return
 
 class Model(Entity):
 
+    prefix = 'm'
+
+    attributes = (('variables', 'variable', 'Variables'), )
+
+    mutli_attrs = ('variable', )
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'Variable' in fields:
-            self.variables = fields['Variable']
-            del fields['Variable']
-        else:
-            self.variables = None
+        self.init2(fields)
+        self._check_fields(fields, ident)
         return
 
 class ModelApplication(Entity):
 
+    prefix = 'ma'
+
+    attributes = (('observation', 'observation', 'Observation'), 
+                  ('model', 'model', 'Model'), 
+                  ('url', 'url', 'URL'), 
+                  ('software', 'software', 'Software'))
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'observation' in fields:
-            self.observation = fields['observation'][0]
-            del fields['observation']
-        else:
-            self.observation = None
-        if 'model' in fields:
-            self.model = fields['model'][0]
-            del fields['model']
-        else:
-            self.model = None
-        if 'url' in fields:
-            self.url = fields['url'][0]
-            del fields['url']
-        else:
-            self.url = None
-        if 'software' in fields:
-            self.software = fields['software'][0]
-            del fields['software']
-        else:
-            self.software = None
+        self.init2(fields)
+        self._check_fields(fields, ident)
         return
 
 class Result(Entity):
 
+    prefix = 'r'
+
+    attributes = (('modelapplication', 'modelapplication', 'Model Application'), 
+                  ('value', 'value', 'Value'), 
+                  ('interactionvariable', 'interactionvariable', 'Interaction variables'), 
+                  ('f', 'f', 'f'), 
+                  ('p', 'p', 'p'), 
+                  ('interpretation', 'interpretation', 'Interpretation'))
+
+    multi_attrs = ('interactinovariable', )
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'modelapplication' in fields:
-            self.modelapplication = fields['modelapplication'][0]
-            del fields['modelapplication']
-        else:
-            self.modelapplication = None
-        if 'value' in fields:
-            self.value = fields['value'][0]
-            del fields['value']
-        else:
-            self.value = None
-        if 'interactionvariable' in fields:
-            self.interactionvariables = fields['interactionvariable']
-            del fields['interactionvariable']
-        else:
-            self.interactionvariable = None
-        if 'f' in fields:
-            self.f = fields['f'][0]
-            del fields['f']
-        else:
-            self.f = None
-        if 'p' in fields:
-            self.p = fields['p'][0]
-            del fields['p']
-        else:
-            self.p = None
-        if 'interpretation' in fields:
-            self.interpretation = fields['interpretation'][0]
-            del fields['interpretation']
-        else:
-            self.interpretation = None
+        self.init2(fields)
+        self._check_fields(fields, ident)
         return
 
 entities = {'SubjectGroup': SubjectGroup, 
