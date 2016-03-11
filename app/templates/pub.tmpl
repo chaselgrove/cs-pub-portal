@@ -26,23 +26,7 @@
     <p>None</p>
 {% else %}
     {% for sg in pub.subjectgroups.itervalues() %}
-        <a name="sg_{{ sg.id }}"></a>
-        {{ sg.id }}
-        {% if not sg.errors %}
-            <p>No errors.</p>
-        {% else %}
-            <p>Errors:</p>
-            {% for error in sg.errors %}
-                <p>{{ error }}</p>
-            {% endfor %}
-        {% endif %}
-        <ul>
-            <li>ID: {{ sg.id }}</li>
-            <li>Diagnosis: {{ sg.diagnosis }}</li>
-            <li>Subjects: {{ sg.n_subjects }}</li>
-            <li>Age mean: {{ sg.age_mean }}</li>
-            <li>Age SD: {{ sg.age_std }}</li>
-        </ul>
+        {{ sg.render() }}
     {% endfor %}
 {% endif %}
 

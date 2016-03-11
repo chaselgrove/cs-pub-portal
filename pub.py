@@ -36,29 +36,40 @@ class Entity:
 
 class SubjectGroup(Entity):
 
+    # attribute, key, display
+    fields = (('diagnosis', 'diagnosis', 'Diagnosis'), 
+              ('n_subjects', 'nsubjects', 'Subjects'), 
+              ('age_mean', 'agemean', 'Age mean'), 
+              ('age_sd', 'agesd', 'Age SD'))
+
+    prefix = 'sg'
+
     def __init__(self, fields, ident):
         Entity.__init__(self, fields, ident)
-        if 'diagnosis' in fields:
-            self.diagnosis = fields['diagnosis'][0]
-            del fields['diagnosis']
-        else:
-            self.diagnosis = None
-        if 'nsubjects' in fields:
-            self.n_subjects = fields['nsubjects'][0]
-            del fields['nsubjects']
-        else:
-            self.n_subjects = None
-        if 'agemean' in fields:
-            self.age_mean = fields['agemean'][0]
-            del fields['agemean']
-        else:
-            self.age_mean = None
-        if 'agesd' in fields:
-            self.age_sd = fields['agesd'][0]
-            del fields['agesd']
-        else:
-            self.age_sd = None
+        for (an, key, _) in self.fields:
+            if key in fields:
+                setattr(self, an, fields[key][0])
+                del fields[key]
+            else:
+                setattr(self, an, None)
         return
+
+    def render(self):
+        output = ''
+        output += '<a name="%s_%s"></a>\n' % (self.prefix, self.id)
+        output += '<p>%s</p>\n' % self.id
+        if not self.errors:
+            output += '<p>No errors.</p>\n'
+        else:
+            output += '<p>Errors:</p>\n'
+            for error in self.errors:
+                output += '<p>%s</p>\n' % str(error)
+        output += '<ul>\n'
+        output += '<li>ID: %s</li>\n' % self.id
+        for (an, _, display) in self.fields:
+            output += '<li>%s: %s</li>\n' % (display, getattr(self, an))
+        output += '</ul>\n'
+        return output
 
 class AcquisitionInstrument(Entity):
 
