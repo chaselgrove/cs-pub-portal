@@ -382,9 +382,10 @@ class Publication:
                 o.errors.append(err)
             if not o.data:
                 o.errors.append(MarkupError('no data given'))
-            elif o.data not in self.data:
-                err = MarkupError('undefined data %s' % o.data)
-                o.errors.append(err)
+            for data in o.data:
+                if data not in self.data:
+                    err = MarkupError('undefined data %s' % o.data)
+                    o.errors.append(err)
         for ma in self.modelapplications.itervalues():
             if not ma.model:
                 ma.errors.append(MarkupError('no model given'))
