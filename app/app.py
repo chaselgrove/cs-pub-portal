@@ -13,7 +13,7 @@ def index():
 
 @app.route('/<pmc_id>')
 def publication(pmc_id):
-    publication = pub.Publication.pub_from_pmc_id(pmc_id)
+    publication = pub.Publication(pmc_id)
     return flask.render_template('pub.tmpl', pub=publication)
 
 if __name__ == '__main__':
