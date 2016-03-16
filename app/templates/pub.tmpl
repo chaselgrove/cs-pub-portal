@@ -62,6 +62,8 @@ PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/
             <p>{{ error.render() }}</p>
         {% endfor %}
     {% endif %}
+    {% set (score, max_score) = pub.score() %}
+    Score: {{ score }}/{{ max_score }}
 </div>
 
 {{ entity_group('Subject Groups', pub.subjectgroups) }}

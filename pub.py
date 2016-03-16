@@ -424,13 +424,54 @@ class Publication:
             aw.check()
         for o in self.observations.itervalues():
             o.check()
-        for model in self.models.itervalues():
-            model.check()
+        for m in self.models.itervalues():
+            m.check()
         for ma in self.modelapplications.itervalues():
             ma.check()
         for r in self.results.itervalues():
             r.check()
         return
+
+    def score(self):
+        s = 0
+        max = 0
+        for sg in self.subjectgroups.itervalues():
+            (es, emax) = sg.score()
+            s += es
+            max += emax
+        for ai in self.acquisitioninstruments.itervalues():
+            (es, emax) = ai.score()
+            s += es
+            max += emax
+        for a in self.acquisitions.itervalues():
+            (es, emax) = a.score()
+            s += es
+            max += emax
+        for d in self.data.itervalues():
+            (es, emax) = d.score()
+            s += es
+            max += emax
+        for aw in self.analysisworkflows.itervalues():
+            (es, emax) = aw.score()
+            s += es
+            max += emax
+        for o in self.observations.itervalues():
+            (es, emax) = o.score()
+            s += es
+            max += emax
+        for m in self.models.itervalues():
+            (es, emax) = m.score()
+            s += es
+            max += emax
+        for ma in self.modelapplications.itervalues():
+            (es, emax) = ma.score()
+            s += es
+            max += emax
+        for r in self.results.itervalues():
+            (es, emax) = r.score()
+            s += es
+            max += emax
+        return (s, max)
 
     def _read_annotations(self):
         e_dict = self._get_annotations()
