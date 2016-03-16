@@ -41,6 +41,21 @@ class LinkError(PubError):
     def render(self):
         return cgi.escape(self.msg)
 
+class PubWarning:
+
+    """base class for publication warnings"""
+
+class MissingFieldWarning(PubWarning):
+
+    """missing field"""
+
+    def __init__(self, field):
+        self.field = field
+        return
+
+    def render(self):
+        return 'Missing field %s' % cgi.escape(self.field)
+
 class Entity:
 
     """base class for entities"""
@@ -66,20 +81,16 @@ class Entity:
                 setattr(self, an, None)
         for name in field_dict:
             annot_id = field_dict[name][0][0]
-            err = MarkupError('unknown field "%s"' % name, annot_id)
+            err = MarkupError('Unknown field "%s"' % name, annot_id)
             self.errors.append(err)
         return
 
     def render(self):
-        output = ''
-        output += '<p>%s</p>\n' % self.id
-        if not self.errors:
-            output += '<p>No errors.</p>\n'
-        else:
-            output += '<p>Errors:</p>\n'
-            for error in self.errors:
-                output += '<p>%s</p>\n' % error.render()
-        output += '<ul>\n'
+        output = '<div class="entity">'
+        output += '<div class="eid">%s</div>\n' % self.id
+        for error in self.errors:
+            output += '<div class="error">%s</div>\n' % error.render()
+        output += '<ul class="fields">\n'
         output += '<li>ID: %s</li>\n' % cgi.escape(self.id)
         for (an, _, display) in self.attributes:
             val = getattr(self, an)
@@ -92,6 +103,7 @@ class Entity:
                 disp_val = cgi.escape(str(val))
             output += '<li>%s: %s</li>\n' % (display, disp_val)
         output += '</ul>\n'
+        output += '</div>\n'
         return output
 
 class SubjectGroup(Entity):
@@ -211,6 +223,7 @@ class Publication:
     def __init__(self, pmc_id):
         self.pmc_id = pmc_id
         self.errors = []
+        self.warnings = []
         self.subjectgroups = {}
         self.acquisitioninstruments = {}
         self.acquisitions = {}
@@ -278,7 +291,7 @@ class Publication:
                     entity_type = et
                     break
             else:
-                msg = 'missing or unknown entity type'
+                msg = 'Missing or unknown entity type'
                 self.errors.append(MarkupError(msg, annot['id']))
                 continue
             block_lines = []
@@ -317,7 +330,7 @@ class Publication:
                     try:
                         (name, value) = line.split(':', 1)
                     except ValueError:
-                        msg = 'bad line %s' % line
+                        msg = 'Bad field definition "%s"' % line
                         self.errors.append(MarkupError(msg, annot_id))
                         continue
                     name = name.strip().lower()
@@ -331,7 +344,7 @@ class Publication:
                 if id:
                     d_base.setdefault(entity_type, {})
                     if id in d_base[entity_type]:
-                        err = MarkupError('duplicate ID %s' % id, annot_id)
+                        err = MarkupError('Duplicate ID "%s"' % id, annot_id)
                         self.errors.append(err)
                     else:
                         d_base[entity_type][id] = fields
@@ -339,7 +352,7 @@ class Publication:
                     d_plus.setdefault(entity_type, {})
                     d_plus[entity_type][plus_id] = fields
                 else:
-                    self.errors.append(MarkupError('no ID given', annot_id))
+                    self.errors.append(MarkupError('No ID given', annot_id))
 
         # third pass: move d_plus entires into d_base
 
@@ -366,54 +379,57 @@ class Publication:
                 d[ent.id] = ent
         return
 
+    def _check_fields(self):
+        """check for undefined fields"""
+
     def _check_links(self):
         """check inter-entity links"""
         for ai in self.acquisitions.itervalues():
             if not ai.acquisitioninstrument:
-                ai.errors.append(LinkError('no acquisition instrument given'))
+                ai.errors.append(LinkError('No acquisition instrument given'))
             elif ai.acquisitioninstrument not in self.acquisitioninstruments:
-                fmt = 'undefined acquisition instrument %s'
+                fmt = 'Undefined acquisition instrument "%s"'
                 err = LinkError(fmt % ai.acquisitioninstrument)
                 ai.errors.append(err)
         for d in self.data.itervalues():
             if not d.subjectgroup:
-                d.errors.append(LinkError('no subject group given'))
+                d.errors.append(LinkError('No subject group given'))
             elif d.subjectgroup not in self.subjectgroups:
-                err = LinkError('undefined subject group %s' % d.subjectgroup)
+                err = LinkError('undefined subject group "%s"' % d.subjectgroup)
                 d.errors.append(err)
             if not d.acquisition:
-                d.errors.append(LinkError('no acquisition given'))
+                d.errors.append(LinkError('No acquisition given'))
             elif d.acquisition not in self.data:
-                err = LinkError('undefined acquisition %s' % d.acquisition)
+                err = LinkError('Undefined acquisition "%s"' % d.acquisition)
                 d.errors.append(err)
         for o in self.observations.itervalues():
             if not o.analysisworkflow:
-                o.errors.append(LinkError('no analysis workflow given'))
+                o.errors.append(LinkError('No analysis workflow given'))
             elif o.analysisworkflow not in self.analysisworkflows:
-                fmt = 'undefined analysis workflow %s'
+                fmt = 'Undefined analysis workflow "%s"'
                 err = LinkError(fmt % o.analysisworkflow)
                 o.errors.append(err)
             if not o.data:
-                o.errors.append(LinkError('no data given'))
+                o.errors.append(LinkError('No data given'))
             for data in o.data:
                 if data not in self.data:
-                    err = LinkError('undefined data %s' % o.data)
+                    err = LinkError('Undefined data "%s"' % o.data)
                     o.errors.append(err)
         for ma in self.modelapplications.itervalues():
             if not ma.model:
-                ma.errors.append(LinkError('no model given'))
+                ma.errors.append(LinkError('No model given'))
             elif ma.model not in self.models:
-                ma.errors.append(LinkError('undefined model %s' % ma.model))
+                ma.errors.append(LinkError('Undefined model "%s"' % ma.model))
             if not ma.observation:
-                ma.errors.append(LinkError('no observation given'))
+                ma.errors.append(LinkError('No observation given'))
             elif ma.observation not in self.observations:
-                err = LinkError('undefined observation %s' % ma.observation)
+                err = LinkError('Undefined observation "%s"' % ma.observation)
                 ma.errors.append(err)
         for r in self.results.itervalues():
             if not r.modelapplication:
-                r.errors.append(LinkError('no model application given'))
+                r.errors.append(LinkError('No model application given'))
             elif r.modelapplication not in self.modelapplications:
-                fmt = 'undefined model application %s'
+                fmt = 'Undefined model application "%s"'
                 err = LinkError(fmt % r.modelapplication)
                 r.errors.append(err)
         return

@@ -4,31 +4,33 @@
 
 {% block body %}
 
-<p>
-{% if pub.pmc_id %}
-    PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
-{% endif %}
-</p>
+<div id="pub_link">
+PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
+</div>
 
-<p>
-{% if not pub.errors %}
-    <p>No errors</p>
-{% else %}
-    <h2>Errors</h2>
-    {% for error in pub.errors %}
-        <p>{{ error.render() }}</p>
-    {% endfor %}
-{% endif %}
-</p>
+<div id="summary">
+    {% if not pub.errors %}
+        <p>No errors</p>
+    {% else %}
+        <h2>Errors</h2>
+        {% for error in pub.errors %}
+            <p>{{ error.render() }}</p>
+        {% endfor %}
+    {% endif %}
+</div>
 
-<h2>Subject Groups</h2>
-{% if not pub.subjectgroups %}
-    <p>None</p>
-{% else %}
-    {% for sg in pub.subjectgroups.itervalues() %}
-        {{ sg.render() }}
-    {% endfor %}
-{% endif %}
+<div class="entity_group">
+    <h2>Subject Groups</h2>
+    {% if not pub.subjectgroups %}
+        <p>None</p>
+    {% else %}
+        <div class="entities">
+            {% for sg in pub.subjectgroups.itervalues() %}
+                {{ sg.render() }}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
 
 <h2>Acquisition Instruments</h2>
 {% if not pub.acquisitioninstruments %}
