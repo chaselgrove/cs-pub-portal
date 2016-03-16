@@ -41,14 +41,10 @@ class Entity:
 
 class SubjectGroup(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['diagnosis'] = Field('Diagnosis')
-        self.fields['nsubjects'] = Field('Subjects')
-        self.fields['agemean'] = Field('Age mean')
-        self.fields['agesd'] = Field('Age SD')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('diagnosis', Field('Diagnosis')), 
+                          ('nsubjects', Field('Subjects')), 
+                          ('agemean', Field('Age mean')), 
+                          ('agesd', Field('Age SD'))))
 
     def check(self):
         self.points.append((5, 'Just for being'))
@@ -60,15 +56,11 @@ class SubjectGroup(Entity):
 
 class AcquisitionInstrument(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['type'] = Field('Type')
-        self.fields['location'] = Field('Location')
-        self.fields['field'] = Field('Field')
-        self.fields['manufacturer'] = Field('Manufacturer')
-        self.fields['model'] = Field('Model')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('type', Field('Type')), 
+                          ('location', Field('Location')), 
+                          ('field', Field('Field')), 
+                          ('manufacturer', Field('Manufacturer')), 
+                          ('model', Field('Model'))))
 
     def check(self):
         self.points.append((7, 'Just for being'))
@@ -83,12 +75,9 @@ class AcquisitionInstrument(Entity):
 
 class Acquisition(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['type'] = Field('Type')
-        self.fields['acquisitioninstrument'] = Field('Acquisition Instrument')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('type', Field('Type')), 
+                          ('acquisitioninstrument', 
+                           Field('Acquisition Instrument'))))
 
     def check(self):
         self.points.append((3, 'Just for being'))
@@ -105,14 +94,10 @@ class Acquisition(Entity):
 
 class Data(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['url'] = URLField('URL')
-        self.fields['doi'] = DOIField('DOI')
-        self.fields['acquisition'] = Field('Acquisition')
-        self.fields['subjectgroup'] = Field('Subject Group')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('url', URLField('URL')), 
+                          ('doi', DOIField('DOI')), 
+                          ('acquisition', Field('Acquisition')), 
+                          ('subjectgroup', Field('Subject Group'))))
 
     def check(self):
         self.points.append((10, 'Just for being'))
@@ -133,13 +118,9 @@ class Data(Entity):
 
 class AnalysisWorkflow(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['method'] = Field('Method')
-        self.fields['methodurl'] = URLField('Method URL')
-        self.fields['software'] = Field('Software')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('method', Field('Method')), 
+                          ('methodurl', URLField('Method URL')), 
+                          ('software', Field('Software'))))
 
     def check(self):
         self.points.append((5, 'Just for being'))
@@ -159,13 +140,9 @@ class AnalysisWorkflow(Entity):
 
 class Observation(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['data'] = MultiField('Data')
-        self.fields['analysisworkflow'] = Field('Analysis Workflow')
-        self.fields['measure'] = Field('Measure')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('data', MultiField('Data')), 
+                          ('analysisworkflow', Field('Analysis Workflow')), 
+                          ('measure', Field('Measure'))))
 
     def check(self):
         self.points.append((10, 'Just for being'))
@@ -186,11 +163,7 @@ class Observation(Entity):
 
 class Model(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['variable'] = MultiField('Variables')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('variable', MultiField('Variables')),))
 
     def check(self):
         self.points.append((5, 'Just for being'))
@@ -219,14 +192,10 @@ class Model(Entity):
 
 class ModelApplication(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['observation'] = MultiField('Observations')
-        self.fields['model'] = Field('Model')
-        self.fields['url'] = URLField('URL')
-        self.fields['software'] = Field('Software')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('observation', MultiField('Observations')), 
+                          ('model', Field('Model')), 
+                          ('url', URLField('URL')), 
+                          ('software', Field('Software'))))
 
     def check(self):
         self.points.append((11, 'Just for being'))
@@ -251,16 +220,12 @@ class ModelApplication(Entity):
 
 class Result(Entity):
 
-    def __init__(self, pub, id, values):
-        self.fields = OrderedDict()
-        self.fields['modelapplication'] = Field('Model Application')
-        self.fields['value'] = Field('Value')
-        self.fields['variables'] = MultiField('Variables')
-        self.fields['f'] = Field('f')
-        self.fields['p'] = Field('p')
-        self.fields['interpretation'] = Field('Interpretation')
-        Entity.__init__(self, pub, id, values)
-        return
+    fields = OrderedDict((('modelapplication', Field('Model Application')), 
+                          ('value', Field('Value')), 
+                          ('variables', MultiField('Variables')), 
+                          ('f', Field('f')), 
+                          ('p', Field('p')), 
+                          ('interpretation', Field('Interpretation'))))
 
     def check(self):
         self.points.append((23, 'Just for being'))
