@@ -20,6 +20,33 @@ class Field(BaseField):
         self.value = value
         return
 
+class URLField(BaseField):
+
+    """URL"""
+
+    def set(self, value):
+        self.value = value
+        return
+
+    def render_value(self):
+        if self.value is None:
+            return ''
+        return '<a href="%s">%s</a>' % (self.value, self.value)
+
+class DOIField(BaseField):
+
+    """DOI"""
+
+    def set(self, value):
+        self.value = value
+        return
+
+    def render_value(self):
+        if self.value is None:
+            return ''
+        fmt = '<a href="http://dx.doi.org/%s">%s</a>'
+        return fmt % (self.value, self.value)
+
 class MultiField(BaseField):
 
     """basic field with multiple values"""
@@ -37,7 +64,7 @@ class MultiField(BaseField):
 
     def render_value(self):
         if self.value is None:
-            return self.value
+            return ''
         return ', '.join(self.value)
 
 # eof

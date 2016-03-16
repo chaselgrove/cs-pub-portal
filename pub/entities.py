@@ -107,8 +107,8 @@ class Data(Entity):
 
     def __init__(self, pub, id, values):
         self.fields = OrderedDict()
-        self.fields['url'] = Field('URL')
-        self.fields['doi'] = Field('DOI')
+        self.fields['url'] = URLField('URL')
+        self.fields['doi'] = DOIField('DOI')
         self.fields['acquisition'] = Field('Acquisition')
         self.fields['subjectgroup'] = Field('Subject Group')
         Entity.__init__(self, pub, id, values)
@@ -136,7 +136,7 @@ class AnalysisWorkflow(Entity):
     def __init__(self, pub, id, values):
         self.fields = OrderedDict()
         self.fields['method'] = Field('Method')
-        self.fields['methodurl'] = Field('Method URL')
+        self.fields['methodurl'] = URLField('Method URL')
         self.fields['software'] = Field('Software')
         Entity.__init__(self, pub, id, values)
         return
@@ -223,7 +223,7 @@ class ModelApplication(Entity):
         self.fields = OrderedDict()
         self.fields['observation'] = MultiField('Observations')
         self.fields['model'] = Field('Model')
-        self.fields['url'] = Field('URL')
+        self.fields['url'] = URLField('URL')
         self.fields['software'] = Field('Software')
         Entity.__init__(self, pub, id, values)
         return
