@@ -89,10 +89,6 @@ class SubjectGroup(Entity):
                   ('age_mean', 'agemean', 'Age mean'), 
                   ('age_sd', 'agesd', 'Age SD'))
 
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
-
 class AcquisitionInstrument(Entity):
 
     prefix = 'ai'
@@ -103,20 +99,12 @@ class AcquisitionInstrument(Entity):
                   ('manufacturer', 'manufacturer', 'Manufacturer'), 
                   ('model', 'model', 'Model'))
 
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
-
 class Acquisition(Entity):
 
     prefix = 'a'
 
     attributes = (('type', 'type', 'type'), 
                   ('acquisitioninstrument', 'acquisitioninstrument', 'Acquisition Instrument'))
-
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
 
 class Data(Entity):
 
@@ -127,10 +115,6 @@ class Data(Entity):
                   ('acquisition', 'acquisition', 'acquisition'), 
                   ('subjectgroup', 'subjectgroup', 'subjectgroup'))
 
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
-
 class AnalysisWorkflow(Entity):
 
     prefix = 'aw'
@@ -138,10 +122,6 @@ class AnalysisWorkflow(Entity):
     attributes = (('method', 'method', 'Method'), 
                   ('methodurl', 'methodurl', 'Method URL'), 
                   ('software', 'software', 'Software'))
-
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
 
 class Observation(Entity):
 
@@ -153,10 +133,6 @@ class Observation(Entity):
 
     multi_attrs = ('data', )
 
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
-
 class Model(Entity):
 
     prefix = 'm'
@@ -164,10 +140,6 @@ class Model(Entity):
     attributes = (('variables', 'variable', 'Variables'), )
 
     mutli_attrs = ('variable', )
-
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
 
 class ModelApplication(Entity):
 
@@ -177,10 +149,6 @@ class ModelApplication(Entity):
                   ('model', 'model', 'Model'), 
                   ('url', 'url', 'URL'), 
                   ('software', 'software', 'Software'))
-
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
 
 class Result(Entity):
 
@@ -194,10 +162,6 @@ class Result(Entity):
                   ('interpretation', 'interpretation', 'Interpretation'))
 
     multi_attrs = ('interactinovariable', )
-
-    def __init__(self, id, fields):
-        Entity.__init__(self, id, fields)
-        return
 
 # entities[entity type] = (entity class, pub attribute name)
 entities = {'SubjectGroup': (SubjectGroup, 
