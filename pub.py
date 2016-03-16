@@ -63,8 +63,9 @@ class Entity:
     multi_attrs = ()
 
     def __init__(self, id, fields):
-        self.errors = []
         self.id = id
+        self.errors = []
+        self.warnings = []
         field_dict = {}
         for (annotation_id, name, value) in fields:
             field_dict.setdefault(name, [])
@@ -79,6 +80,7 @@ class Entity:
                 del field_dict[name]
             else:
                 setattr(self, an, None)
+                self.warnings.append(MissingFieldWarning(name))
         for name in field_dict:
             annot_id = field_dict[name][0][0]
             err = MarkupError('Unknown field "%s"' % name, annot_id)
@@ -90,6 +92,8 @@ class Entity:
         output += '<div class="eid">%s</div>\n' % self.id
         for error in self.errors:
             output += '<div class="error">%s</div>\n' % error.render()
+        for warning in self.warnings:
+            output += '<div class="warning">%s</div>\n' % warning.render()
         output += '<ul class="fields">\n'
         output += '<li>ID: %s</li>\n' % cgi.escape(self.id)
         for (an, _, display) in self.attributes:
@@ -183,12 +187,12 @@ class Result(Entity):
 
     attributes = (('modelapplication', 'modelapplication', 'Model Application'), 
                   ('value', 'value', 'Value'), 
-                  ('interactionvariable', 'interactionvariable', 'Interaction variables'), 
+                  ('interactionvariables', 'interactionvariable', 'Interaction variables'), 
                   ('f', 'f', 'f'), 
                   ('p', 'p', 'p'), 
                   ('interpretation', 'interpretation', 'Interpretation'))
 
-    multi_attrs = ('interactinovariable', )
+    multi_attrs = ('interactinovariables', )
 
 # entities[entity type] = (entity class, pub attribute name)
 entities = {'SubjectGroup': (SubjectGroup, 
@@ -223,7 +227,6 @@ class Publication:
     def __init__(self, pmc_id):
         self.pmc_id = pmc_id
         self.errors = []
-        self.warnings = []
         self.subjectgroups = {}
         self.acquisitioninstruments = {}
         self.acquisitions = {}
@@ -378,9 +381,6 @@ class Publication:
                 d = getattr(self, an)
                 d[ent.id] = ent
         return
-
-    def _check_fields(self):
-        """check for undefined fields"""
 
     def _check_links(self):
         """check inter-entity links"""
