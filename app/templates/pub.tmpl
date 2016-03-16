@@ -17,7 +17,8 @@
 
 {% macro entity(ent) %}
     <div class="entity">
-        <div class="ent_id">{{ ent.id }}</div>
+        {% set (score, max_score) = ent.score() %}
+        <div class="ent_id">{{ ent.id }} ({{ score }}/{{ max_score }})</div>
         {% for error in ent.errors %}
             <div class="error">{{ error.render() }}</div>
         {% endfor %}
@@ -29,6 +30,13 @@
                 <li>{{ display }}: {{ ent.display_value(an) }}</li>
             {% endfor %}
         </ul>
+        <div class="points">
+            Points
+            {% for (value, note) in ent.points %}
+                <br/>
+                {{ value }} {{ note }}
+            {% endfor %}
+        </div>
         <div class="annot_links">
             Annotations
             {% for annot_link in ent.annotation_links() %}

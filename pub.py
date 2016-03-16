@@ -62,11 +62,13 @@ class Entity:
 
     multi_attrs = ()
 
-    def __init__(self, id, fields):
+    def __init__(self, pub, id, fields):
+        self.pub = pub
         self.id = id
         self.annotation_ids = set()
         self.errors = []
         self.warnings = []
+        self.points = []
         field_dict = {}
         for (annotation_id, name, value) in fields:
             field_dict.setdefault(name, [])
@@ -88,6 +90,16 @@ class Entity:
             err = MarkupError('Unknown field "%s"' % name, annot_id)
             self.errors.append(err)
         return
+
+    def score(self):
+        """obj.score() -> (score, maximum possible score)"""
+        s = 0
+        max = 0
+        for (val, _) in self.points:
+            if val > 0:
+                max += val
+            s += val
+        return (s, max)
 
     def __getitem__(self, key):
         for (an, _, _) in self.attributes:
@@ -121,6 +133,14 @@ class SubjectGroup(Entity):
                   ('age_mean', 'agemean', 'Age mean'), 
                   ('age_sd', 'agesd', 'Age SD'))
 
+    def check(self):
+        self.points.append((5, 'Just for being'))
+        # check for missing fields
+        for (an, name, _) in self.attributes:
+            if not getattr(self, an):
+                self.points.append((-1, 'Missing %s' % name))
+        return
+
 class AcquisitionInstrument(Entity):
 
     prefix = 'ai'
@@ -131,12 +151,36 @@ class AcquisitionInstrument(Entity):
                   ('manufacturer', 'manufacturer', 'Manufacturer'), 
                   ('model', 'model', 'Model'))
 
+    def check(self):
+        self.points.append((7, 'Just for being'))
+        # check for missing fields
+        for (an, name, _) in self.attributes:
+            if not getattr(self, an):
+                if an == 'field':
+                    self.points.append((-2, 'Missing %s' % name))
+                else:
+                    self.points.append((-1, 'Missing %s' % name))
+        return
+
 class Acquisition(Entity):
 
     prefix = 'a'
 
     attributes = (('type', 'type', 'type'), 
                   ('acquisitioninstrument', 'acquisitioninstrument', 'Acquisition Instrument'))
+
+    def check(self):
+        self.points.append((3, 'Just for being'))
+        # check for missing fields
+        if not self.type:
+            self.points.append((-1, 'Missing type'))
+        if not self.acquisitioninstrument:
+            self.points.append((-1, 'Missing acquisition instrument'))
+        elif self.acquisitioninstrument not in self.pub.acquisitioninstruments:
+            fmt = 'Undefined acquisition instrument "%s"'
+            msg = fmt % self.acquisitioninstrument
+            self.errors.append(LinkError(msg))
+        return
 
 class Data(Entity):
 
@@ -147,6 +191,22 @@ class Data(Entity):
                   ('acquisition', 'acquisition', 'acquisition'), 
                   ('subjectgroup', 'subjectgroup', 'subjectgroup'))
 
+    def check(self):
+        self.points.append((10, 'Just for being'))
+        if not self.url and not self.doi:
+            self.points.append((-5, 'No link to data (DOI or URL)'))
+        if not self.subjectgroup:
+            self.points.append((-1, 'Missing subject group'))
+        elif self.subjectgroup not in self.pub.subjectgroups:
+            msg = 'Undefined subjectgroup "%s"' % self.subjectgroup
+            self.errors.append(LinkError(msg))
+        if not self.acquisition:
+            self.points.append((-1, 'Missing acquisition'))
+        elif self.acquisition not in self.pub.acquisitions:
+            msg = 'Undefined acquisition "%s"' % self.acquisition
+            self.errors.append(LinkError(msg))
+        return
+
 class AnalysisWorkflow(Entity):
 
     prefix = 'aw'
@@ -154,6 +214,16 @@ class AnalysisWorkflow(Entity):
     attributes = (('method', 'method', 'Method'), 
                   ('methodurl', 'methodurl', 'Method URL'), 
                   ('software', 'software', 'Software'))
+
+    def check(self):
+        self.points.append((5, 'Just for being'))
+        if not self.method:
+            self.points.append((-1, 'Missing method'))
+        if not self.methodurl:
+            self.points.append((-2, 'Missing method URL'))
+        if not self.software:
+            self.points.append((-1, 'Missing software'))
+        return
 
 class Observation(Entity):
 
@@ -165,6 +235,23 @@ class Observation(Entity):
 
     multi_attrs = ('data', )
 
+    def check(self):
+        self.points.append((10, 'Just for being'))
+        if not self.measure:
+            self.points.append((-5, 'No measure'))
+        if not self.data:
+            self.points.append((-2, 'Missing data'))
+        else:
+            for data in self.data:
+                if data not in self.pub.data:
+                    self.errors.append(LinkError('Undefined data %s' % data))
+        if not self.analysisworkflow:
+            self.points.append((-2, 'Missing analysis workflow'))
+        elif self.analysisworkflow not in self.pub.analysisworkflows:
+            msg = 'Undefined analysis workflow %s' % self.analysisworkflow
+            self.errors.append(LinkError(msg))
+        return
+
 class Model(Entity):
 
     prefix = 'm'
@@ -172,6 +259,31 @@ class Model(Entity):
     attributes = (('variables', 'variable', 'Variables'), )
 
     multi_attrs = ('variables', )
+
+    def check(self):
+        self.points.append((5, 'Just for being'))
+        # check if any variables are defined
+        # check for bad interaction variables
+        if not self.variables:
+            self.points.append((-4, 'No variables defined'))
+        else:
+            simple_vars = []
+            int_vars = []
+            bad_components = set()
+            for var in self.variables:
+                if '+' in var:
+                    int_vars.append(var)
+                else:
+                    simple_vars.append(var)
+            for int_var in int_vars:
+                for int_component in int_var.split('+'):
+                    if int_component not in simple_vars:
+                        bad_components.add(int_component)
+            if bad_components:
+                vars = ', '.join(sorted(bad_components))
+                msg = 'Variables only in interaction terms: %s' % vars
+                self.points.append((-2, msg))
+        return
 
 class ModelApplication(Entity):
 
@@ -183,6 +295,25 @@ class ModelApplication(Entity):
                   ('software', 'software', 'Software'))
 
     multi_attrs = ('observations', )
+
+    def check(self):
+        self.points.append((11, 'Just for being'))
+        if not self.url:
+            self.points.append((-5, 'No link to analysis'))
+        if not self.software:
+            self.points.append((-1, 'Software undefined'))
+        if not self.model:
+            self.points.append((-2, 'Model undefined'))
+        elif self.model not in self.pub.models:
+            self.errors.append(LinkError('Undefined model %s' % self.model))
+        if not self.observations:
+            self.points.append((-2, 'No observations defined'))
+        else:
+            for o in self.observations:
+                if o not in self.pub.observations:
+                    err = LinkError('Undefined observation %s' % o)
+                    self.errors.append(err)
+        return
 
 class Result(Entity):
 
@@ -196,6 +327,47 @@ class Result(Entity):
                   ('interpretation', 'interpretation', 'Interpretation'))
 
     multi_attrs = ('interactinovariables', )
+
+    def check(self):
+        self.points.append((23, 'Just for being'))
+        if not self.value:
+            self.points.append((-3, 'Value undefined'))
+        if not self.f:
+            self.points.append((-2, 'F undefined'))
+        if not self.p:
+            self.points.append((-5, 'P undefined'))
+        if not self.interpretation:
+            self.points.append((-2, 'Interpretation undefined'))
+        if not self.modelapplication:
+            self.points.append((-5, 'No model application given'))
+            model_vars = None
+        elif self.modelapplication not in self.pub.modelapplications:
+            msg = 'Undefined model application %s' % self.modelapplication
+            self.errors.append(LinkError(msg))
+            model_vars = None
+        else:
+            ma = self.pub.modelapplications[self.modelapplication]
+            if not ma.model:
+                model_vars = None
+            elif ma.model not in self.pub.models:
+                model_vars = None
+            else:
+                model_vars = self.pub.models[ma.model]
+        if not self.variables:
+            self.points.append((-5, 'No variables defined'))
+        else:
+            if not model_vars:
+                self.points.append((-2, 'No model variables to check against'))
+            else:
+                bad_vars = set()
+                for var in self.variables:
+                    if var not in model_vars:
+                        bad_vars.add(var)
+                if bad_vars:
+                    fmt = 'Variables not defined in the model: %s'
+                    msg = fmt % ', '.join(sorted(bad_vars))
+                    self.points.append((-2, msg))
+        return
 
 # entities[entity type] = (entity class, pub attribute name)
 entities = {'SubjectGroup': (SubjectGroup, 
@@ -240,7 +412,24 @@ class Publication:
         self.modelapplications = {}
         self.results = {}
         self._read_annotations()
-        self._check_links()
+        for sg in self.subjectgroups.itervalues():
+            sg.check()
+        for ai in self.acquisitioninstruments.itervalues():
+            ai.check()
+        for a in self.acquisitions.itervalues():
+            a.check()
+        for d in self.data.itervalues():
+            d.check()
+        for aw in self.analysisworkflows.itervalues():
+            aw.check()
+        for o in self.observations.itervalues():
+            o.check()
+        for model in self.models.itervalues():
+            model.check()
+        for ma in self.modelapplications.itervalues():
+            ma.check()
+        for r in self.results.itervalues():
+            r.check()
         return
 
     def _read_annotations(self):
@@ -370,7 +559,8 @@ class Publication:
                     base = d_base[entity_type][entity_id]
                 except KeyError:
                     annot_id = d_plus[entity_type][entity_id][0][0]
-                    self.errors.append('unknown ID %s' % entity_id, annot_id)
+                    err = MarkupError('Unknown ID %s' % entity_id)
+                    self.errors.append(err, annot_id)
                 else:
                     base.extend(d_plus[entity_type][entity_id])
 
@@ -380,63 +570,9 @@ class Publication:
         for entity_type in e_dict:
             for entity_id in e_dict[entity_type]:
                 (cls, an) = entities[entity_type]
-                ent = cls(entity_id, e_dict[entity_type][entity_id])
+                ent = cls(self, entity_id, e_dict[entity_type][entity_id])
                 d = getattr(self, an)
                 d[ent.id] = ent
-        return
-
-    def _check_links(self):
-        """check inter-entity links"""
-        for ai in self.acquisitions.itervalues():
-            if not ai.acquisitioninstrument:
-                ai.errors.append(LinkError('No acquisition instrument given'))
-            elif ai.acquisitioninstrument not in self.acquisitioninstruments:
-                fmt = 'Undefined acquisition instrument "%s"'
-                err = LinkError(fmt % ai.acquisitioninstrument)
-                ai.errors.append(err)
-        for d in self.data.itervalues():
-            if not d.subjectgroup:
-                d.errors.append(LinkError('No subject group given'))
-            elif d.subjectgroup not in self.subjectgroups:
-                err = LinkError('undefined subject group "%s"' % d.subjectgroup)
-                d.errors.append(err)
-            if not d.acquisition:
-                d.errors.append(LinkError('No acquisition given'))
-            elif d.acquisition not in self.data:
-                err = LinkError('Undefined acquisition "%s"' % d.acquisition)
-                d.errors.append(err)
-        for o in self.observations.itervalues():
-            if not o.analysisworkflow:
-                o.errors.append(LinkError('No analysis workflow given'))
-            elif o.analysisworkflow not in self.analysisworkflows:
-                fmt = 'Undefined analysis workflow "%s"'
-                err = LinkError(fmt % o.analysisworkflow)
-                o.errors.append(err)
-            if not o.data:
-                o.errors.append(LinkError('No data given'))
-            for data in o.data:
-                if data not in self.data:
-                    err = LinkError('Undefined data "%s"' % o.data)
-                    o.errors.append(err)
-        for ma in self.modelapplications.itervalues():
-            if not ma.model:
-                ma.errors.append(LinkError('No model given'))
-            elif ma.model not in self.models:
-                ma.errors.append(LinkError('Undefined model "%s"' % ma.model))
-            if not ma.observations:
-                ma.errors.append(LinkError('No observations given'))
-            else:
-                for observation in ma.observations:
-                    if observation not in self.observations:
-                        msg = 'Undefined observation "%s"' % observation
-                        ma.errors.append(LinkError(msg))
-        for r in self.results.itervalues():
-            if not r.modelapplication:
-                r.errors.append(LinkError('No model application given'))
-            elif r.modelapplication not in self.modelapplications:
-                fmt = 'Undefined model application "%s"'
-                err = LinkError(fmt % r.modelapplication)
-                r.errors.append(err)
         return
 
 def annot_url(annot_id):
