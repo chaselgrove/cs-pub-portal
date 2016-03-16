@@ -1,5 +1,37 @@
 {% extends "base.tmpl" %}
 
+{% macro entity_group(name, entities) %}
+    <div class="entity_group">
+        <h2>{{ name }}</h2>
+        {% if not entities %}
+            None
+        {% else %}
+            <div class="entities">
+                {% for e in entities.itervalues() %}
+                    {{ entity(e) }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro entity(ent) %}
+    <div class="entity">
+        {{ ent.id }}
+        {% for error in ent.errors %}
+            <div class="error">{{ error.render() }}</div>
+        {% endfor %}
+        {% for warning in ent.warnings %}
+            <div class="warning">{{ warning.render() }}</div>
+        {% endfor %}
+        <ul class="fields">
+            {% for (an, _, display) in ent.attributes %}
+                <li>{{ display }}: {{ ent.display_value(an) }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endmacro %}
+
 {% block title %}PMC {{ pub.pmc_id }} - CANDI Share Publication Portal{% endblock %}
 
 {% block body %}
@@ -19,89 +51,22 @@ PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/
     {% endif %}
 </div>
 
-<div class="entity_group">
-    <h2>Subject Groups</h2>
-    {% if not pub.subjectgroups %}
-        <p>None</p>
-    {% else %}
-        <div class="entities">
-            {% for sg in pub.subjectgroups.itervalues() %}
-                {{ sg.render() }}
-            {% endfor %}
-        </div>
-    {% endif %}
-</div>
+{{ entity_group('Subject Groups', pub.subjectgroups) }}
 
-<h2>Acquisition Instruments</h2>
-{% if not pub.acquisitioninstruments %}
-    <p>None</p>
-{% else %}
-    {% for ai in pub.acquisitioninstruments.itervalues() %}
-        {{ ai.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Acquisition Instruments', pub.acquisitioninstruments) }}
 
-<h2>Acquisitions</h2>
-{% if not pub.acquisitions %}
-    <p>None</p>
-{% else %}
-    {% for a in pub.acquisitions.itervalues() %}
-        {{ a.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Acquisitions', pub.acquisitions) }}
 
-<h2>Data</h2>
-{% if not pub.subjectgroups %}
-    <p>None</p>
-{% else %}
-    {% for d in pub.data.itervalues() %}
-        {{ d.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Data', pub.data ) }}
 
-<h2>Analysis Workflows</h2>
-{% if not pub.analysisworkflows %}
-    <p>None</p>
-{% else %}
-    {% for aw in pub.analysisworkflows.itervalues() %}
-        {{ aw.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Analysis Workflows', pub.analysisworkflows) }}
 
-<h2>Observations</h2>
-{% if not pub.observations %}
-    <p>None</p>
-{% else %}
-    {% for o in pub.observations.itervalues() %}
-        {{ o.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Observations', pub.observations) }}
 
-<h2>Models</h2>
-{% if not pub.models %}
-    <p>None</p>
-{% else %}
-    {% for m in pub.models.itervalues() %}
-        {{ m.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Models', pub.models) }}
 
-<h2>Model Applications</h2>
-{% if not pub.modelapplications %}
-    <p>None</p>
-{% else %}
-    {% for ma in pub.modelapplications.itervalues() %}
-        {{ ma.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Model Applications', pub.modelapplications) }}
 
-<h2>Results</h2>
-{% if not pub.results %}
-    <p>None</p>
-{% else %}
-    {% for r in pub.results.itervalues() %}
-        {{ r.render() }}
-    {% endfor %}
-{% endif %}
+{{ entity_group('Results', pub.results) }}
 
 {% endblock %}

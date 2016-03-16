@@ -87,28 +87,21 @@ class Entity:
             self.errors.append(err)
         return
 
-    def render(self):
-        output = '<div class="entity">'
-        output += '<div class="eid">%s</div>\n' % self.id
-        for error in self.errors:
-            output += '<div class="error">%s</div>\n' % error.render()
-        for warning in self.warnings:
-            output += '<div class="warning">%s</div>\n' % warning.render()
-        output += '<ul class="fields">\n'
-        output += '<li>ID: %s</li>\n' % cgi.escape(self.id)
-        for (an, _, display) in self.attributes:
-            val = getattr(self, an)
-            if val is None:
-                disp_val = ''
-            elif isinstance(val, list):
-                parts = [ cgi.escape(el) for el in val ]
-                disp_val = ', '.join(parts)
-            else:
-                disp_val = cgi.escape(str(val))
-            output += '<li>%s: %s</li>\n' % (display, disp_val)
-        output += '</ul>\n'
-        output += '</div>\n'
-        return output
+    def __getitem__(self, key):
+        for (an, _, _) in self.attributes:
+            if key == an:
+                break
+        else:
+            raise KeyError(key)
+        return getattr(self, key)
+
+    def display_value(self, key):
+        value = self[key]
+        if value is None:
+            return ''
+        if isinstance(value, list):
+            return ', '.join(value)
+        return value
 
 class SubjectGroup(Entity):
 
@@ -141,8 +134,8 @@ class Data(Entity):
 
     prefix = 'd'
 
-    attributes = (('url', 'url', 'url'), 
-                  ('doi', 'doi', 'doi'), 
+    attributes = (('url', 'url', 'URL'), 
+                  ('doi', 'doi', 'DOI'), 
                   ('acquisition', 'acquisition', 'acquisition'), 
                   ('subjectgroup', 'subjectgroup', 'subjectgroup'))
 
