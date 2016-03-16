@@ -22,9 +22,6 @@
         {% for error in ent.errors %}
             <div class="error">{{ error.render() }}</div>
         {% endfor %}
-        {% for warning in ent.warnings %}
-            <div class="warning">{{ warning.render() }}</div>
-        {% endfor %}
         <ul class="fields">
             {% for (an, _, display) in ent.attributes %}
                 <li>{{ display }}: {{ ent.display_value(an) }}</li>
@@ -66,22 +63,22 @@ PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/
     Score: {{ score }}/{{ max_score }}
 </div>
 
-{{ entity_group('Subject Groups', pub.subjectgroups) }}
+{{ entity_group('Subject Groups', pub.entities['SubjectGroup']) }}
 
-{{ entity_group('Acquisition Instruments', pub.acquisitioninstruments) }}
+{{ entity_group('Acquisition Instruments', pub.entities['AcquisitionInstrument']) }}
 
-{{ entity_group('Acquisitions', pub.acquisitions) }}
+{{ entity_group('Acquisitions', pub.entities['Acquisitions']) }}
 
-{{ entity_group('Data', pub.data ) }}
+{{ entity_group('Data', pub.entities['Data']) }}
 
-{{ entity_group('Analysis Workflows', pub.analysisworkflows) }}
+{{ entity_group('Analysis Workflows', pub.entities['AnalysisWorkflow']) }}
 
-{{ entity_group('Observations', pub.observations) }}
+{{ entity_group('Observations', pub.entities['Observation']) }}
 
-{{ entity_group('Models', pub.models) }}
+{{ entity_group('Models', pub.entities['Model']) }}
 
-{{ entity_group('Model Applications', pub.modelapplications) }}
+{{ entity_group('Model Applications', pub.entities['ModelApplication']) }}
 
-{{ entity_group('Results', pub.results) }}
+{{ entity_group('Results', pub.entities['Result']) }}
 
 {% endblock %}

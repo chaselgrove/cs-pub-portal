@@ -3,58 +3,85 @@ import httplib
 import urllib
 import cgi
 
-class PubError:
+class PubError(Exception):
 
-    """base class for publication errors
+    """base class for exceptions"""
+
+class HypothesisError(PubError):
+
+    """error in hpyothes.is call"""
+
+class MarkupError:
+
+    """base class for markup errors
 
     these are not derived from Exception because they are not errors to be 
     caught in code
     """
 
-class MarkupError(PubError):
-
-    """parse or markup error
-
-    instances belong to Pub instances and have associated annotations
-    """
-
-    def __init__(self, msg, annotation_id):
+    def __init__(self, msg, annotation_id=None):
         self.msg = msg
         self.annotation_id = annotation_id
         return
 
     def render(self):
-        fmt = '<a href="%s">%s</a>'
-        return fmt % (annot_url(self.annotation_id), cgi.escape(self.msg))
+        if self.annotation_id:
+            fmt = '<a href="%s">%s</a>'
+            return fmt % (annot_url(self.annotation_id), cgi.escape(self.msg))
+        else:
+            return cgi.escape(self.msg)
 
-class LinkError(PubError):
+class LinkError(MarkupError):
 
-    """missing link error
+    """inter-entity link error"""
 
-    instances belong to entities
-    """
+class UnknownFieldError(MarkupError):
 
-    def __init__(self, msg):
-        self.msg = msg
+    """unknown field in entity definition"""
+
+    def __init__(self, name, annot_id):
+        MarkupError.__init__(self, 'Unknown field %s' % name, annot_id)
         return
 
-    def render(self):
-        return cgi.escape(self.msg)
+class MissingOrUnknownTypeError(MarkupError):
 
-class PubWarning:
+    """missing or unknown entity type"""
 
-    """base class for publication warnings"""
-
-class MissingFieldWarning(PubWarning):
-
-    """missing field"""
-
-    def __init__(self, field):
-        self.field = field
+    def __init__(self, name, annot_id):
+        MarkupError.__init__(self, 'Missing or unknown entity type' , annot_id)
         return
 
-    def render(self):
-        return 'Missing field "%s"' % cgi.escape(self.field)
+class BadFieldDefinitionError(MarkupError):
+
+    """bad field definition line"""
+
+    def __init__(self, annot_id):
+        MarkupError.__init__(self, 'Bad field definition', annot_id)
+        return
+
+class DuplicateIDError(MarkupError):
+
+    """duplicate entity ID"""
+
+    def __init__(self, id, annot_id):
+        MarkupError.__init__(self, 'Duplicate ID %s' % id, annot_id)
+        return
+
+class MissingIDError(MarkupError):
+
+    """missing entity ID"""
+
+    def __init__(self, annot_id):
+        MarkupError.__init__(self, 'No ID given', annot_id)
+        return
+
+class UnknownIDError(MarkupError):
+
+    """unknown entity ID in extension"""
+
+    def __init__(self, id, annot_id):
+        MarkupError.__init__(self, 'Unknown ID %s' % id, annot_id)
+        return
 
 class Entity:
 
@@ -67,7 +94,6 @@ class Entity:
         self.id = id
         self.annotation_ids = set()
         self.errors = []
-        self.warnings = []
         self.points = []
         field_dict = {}
         for (annotation_id, name, value) in fields:
@@ -84,10 +110,9 @@ class Entity:
                 del field_dict[name]
             else:
                 setattr(self, an, None)
-                self.warnings.append(MissingFieldWarning(name))
         for name in field_dict:
             annot_id = field_dict[name][0][0]
-            err = MarkupError('Unknown field "%s"' % name, annot_id)
+            err = UnknownFieldError(name, annot_id)
             self.errors.append(err)
         return
 
@@ -170,7 +195,7 @@ class Acquisition(Entity):
             self.points.append((-1, 'Missing type'))
         if not self.acquisitioninstrument:
             self.points.append((-1, 'Missing acquisition instrument'))
-        elif self.acquisitioninstrument not in self.pub.acquisitioninstruments:
+        elif self.acquisitioninstrument not in self.pub.entities['AcquisitionInstrument']:
             fmt = 'Undefined acquisition instrument "%s"'
             msg = fmt % self.acquisitioninstrument
             self.errors.append(LinkError(msg))
@@ -189,12 +214,12 @@ class Data(Entity):
             self.points.append((-5, 'No link to data (DOI or URL)'))
         if not self.subjectgroup:
             self.points.append((-1, 'Missing subject group'))
-        elif self.subjectgroup not in self.pub.subjectgroups:
+        elif self.subjectgroup not in self.pub.entities['SubjectGroup']:
             msg = 'Undefined subjectgroup "%s"' % self.subjectgroup
             self.errors.append(LinkError(msg))
         if not self.acquisition:
             self.points.append((-1, 'Missing acquisition'))
-        elif self.acquisition not in self.pub.acquisitions:
+        elif self.acquisition not in self.pub.entities['Acquisition']:
             msg = 'Undefined acquisition "%s"' % self.acquisition
             self.errors.append(LinkError(msg))
         return
@@ -231,11 +256,11 @@ class Observation(Entity):
             self.points.append((-2, 'Missing data'))
         else:
             for data in self.data:
-                if data not in self.pub.data:
+                if data not in self.pub.entities['Data']:
                     self.errors.append(LinkError('Undefined data %s' % data))
         if not self.analysisworkflow:
             self.points.append((-2, 'Missing analysis workflow'))
-        elif self.analysisworkflow not in self.pub.analysisworkflows:
+        elif self.analysisworkflow not in self.pub.entities['AnalysisWorkflows']:
             msg = 'Undefined analysis workflow %s' % self.analysisworkflow
             self.errors.append(LinkError(msg))
         return
@@ -288,13 +313,13 @@ class ModelApplication(Entity):
             self.points.append((-1, 'Software undefined'))
         if not self.model:
             self.points.append((-2, 'Model undefined'))
-        elif self.model not in self.pub.models:
+        elif self.model not in self.pub.entities['Model']:
             self.errors.append(LinkError('Undefined model %s' % self.model))
         if not self.observations:
             self.points.append((-2, 'No observations defined'))
         else:
             for o in self.observations:
-                if o not in self.pub.observations:
+                if o not in self.pub.entities['Observation']:
                     err = LinkError('Undefined observation %s' % o)
                     self.errors.append(err)
         return
@@ -323,18 +348,18 @@ class Result(Entity):
         if not self.modelapplication:
             self.points.append((-5, 'No model application given'))
             model_vars = None
-        elif self.modelapplication not in self.pub.modelapplications:
+        elif self.modelapplication not in self.pub.entities['ModelApplication']:
             msg = 'Undefined model application %s' % self.modelapplication
             self.errors.append(LinkError(msg))
             model_vars = None
         else:
-            ma = self.pub.modelapplications[self.modelapplication]
+            ma = self.pub.entities['ModelApplication'][self.modelapplication]
             if not ma.model:
                 model_vars = None
-            elif ma.model not in self.pub.models:
+            elif ma.model not in self.pub.entities['Model']:
                 model_vars = None
             else:
-                model_vars = self.pub.models[ma.model]
+                model_vars = self.pub.entities['Model'][ma.model]
         if not self.variables:
             self.points.append((-5, 'No variables defined'))
         else:
@@ -351,116 +376,42 @@ class Result(Entity):
                     self.points.append((-2, msg))
         return
 
-# entities[entity type] = (entity class, pub attribute name)
-entities = {'SubjectGroup': (SubjectGroup, 
-                             'subjectgroups'), 
-            'AcquisitionInstrument': (AcquisitionInstrument, 
-                                      'acquisitioninstruments'), 
-            'Acquisition': (Acquisition, 
-                            'acquisitions'), 
-            'Data': (Data, 
-                     'data'), 
-            'AnalysisWorkflow': (AnalysisWorkflow, 
-                                 'analysisworkflows'), 
-            'Observation': (Observation, 
-                            'observations'), 
-            'Model': (Model, 
-                      'models'), 
-            'ModelApplication': (ModelApplication, 
-                                 'modelapplications'), 
-            'Result': (Result, 
-                       'results')}
-
-class PubError(Exception):
-
-    """base class for exceptions"""
-
-class HypothesisError(PubError):
-
-    """error in hpyothes.is call"""
+# entities[markup entity type] = entity class
+entities = {'SubjectGroup': SubjectGroup, 
+            'AcquisitionInstrument': AcquisitionInstrument, 
+            'Acquisition': Acquisition, 
+            'Data': Data, 
+            'AnalysisWorkflow': AnalysisWorkflow, 
+            'Observation': Observation, 
+            'Model': Model, 
+            'ModelApplication': ModelApplication, 
+            'Result': Result}
 
 class Publication:
 
     def __init__(self, pmc_id):
         self.pmc_id = pmc_id
         self.errors = []
-        self.subjectgroups = {}
-        self.acquisitioninstruments = {}
-        self.acquisitions = {}
-        self.data = {}
-        self.analysisworkflows = {}
-        self.observations = {}
-        self.models = {}
-        self.modelapplications = {}
-        self.results = {}
+        self.entities = {}
+        for et in entities:
+            self.entities[et] = {}
         self._read_annotations()
-        for sg in self.subjectgroups.itervalues():
-            sg.check()
-        for ai in self.acquisitioninstruments.itervalues():
-            ai.check()
-        for a in self.acquisitions.itervalues():
-            a.check()
-        for d in self.data.itervalues():
-            d.check()
-        for aw in self.analysisworkflows.itervalues():
-            aw.check()
-        for o in self.observations.itervalues():
-            o.check()
-        for m in self.models.itervalues():
-            m.check()
-        for ma in self.modelapplications.itervalues():
-            ma.check()
-        for r in self.results.itervalues():
-            r.check()
+        for ed in self.entities.itervalues():
+            for ent in ed.itervalues():
+                ent.check()
         return
 
     def score(self):
         s = 0
         max = 0
-        for sg in self.subjectgroups.itervalues():
-            (es, emax) = sg.score()
-            s += es
-            max += emax
-        for ai in self.acquisitioninstruments.itervalues():
-            (es, emax) = ai.score()
-            s += es
-            max += emax
-        for a in self.acquisitions.itervalues():
-            (es, emax) = a.score()
-            s += es
-            max += emax
-        for d in self.data.itervalues():
-            (es, emax) = d.score()
-            s += es
-            max += emax
-        for aw in self.analysisworkflows.itervalues():
-            (es, emax) = aw.score()
-            s += es
-            max += emax
-        for o in self.observations.itervalues():
-            (es, emax) = o.score()
-            s += es
-            max += emax
-        for m in self.models.itervalues():
-            (es, emax) = m.score()
-            s += es
-            max += emax
-        for ma in self.modelapplications.itervalues():
-            (es, emax) = ma.score()
-            s += es
-            max += emax
-        for r in self.results.itervalues():
-            (es, emax) = r.score()
-            s += es
-            max += emax
+        for ed in self.entities.itervalues():
+            for ent in ed.itervalues():
+                (es, emax) = ent.score()
+                s += es
+                max += emax
         return (s, max)
 
     def _read_annotations(self):
-        e_dict = self._get_annotations()
-        self._create_entities(e_dict)
-        return
-
-    def _get_annotations(self):
 
         """reads annotations from a PubMed Central manuscript
 
@@ -509,8 +460,7 @@ class Publication:
                     entity_type = et
                     break
             else:
-                msg = 'Missing or unknown entity type'
-                self.errors.append(MarkupError(msg, annot['id']))
+                self.errors.append(MissingOrUnknownTypeError(annot['id']))
                 continue
             block_lines = []
             for line in annot['text'].split('\n'):
@@ -548,8 +498,8 @@ class Publication:
                     try:
                         (name, value) = line.split(':', 1)
                     except ValueError:
-                        msg = 'Bad field definition "%s"' % line
-                        self.errors.append(MarkupError(msg, annot_id))
+                        err = BadFieldDefinitionError(annot_id)
+                        self.errors.append(err)
                         continue
                     name = name.strip().lower()
                     value = value.strip()
@@ -562,7 +512,7 @@ class Publication:
                 if id:
                     d_base.setdefault(entity_type, {})
                     if id in d_base[entity_type]:
-                        err = MarkupError('Duplicate ID "%s"' % id, annot_id)
+                        err = DuplicateIDError(id, annot_id)
                         self.errors.append(err)
                     else:
                         d_base[entity_type][id] = fields
@@ -570,7 +520,7 @@ class Publication:
                     d_plus.setdefault(entity_type, {})
                     d_plus[entity_type][plus_id] = fields
                 else:
-                    self.errors.append(MarkupError('No ID given', annot_id))
+                    self.errors.append(MissingIDError(annot_id))
 
         # third pass: move d_plus entires into d_base
 
@@ -582,20 +532,19 @@ class Publication:
                     base = d_base[entity_type][entity_id]
                 except KeyError:
                     annot_id = d_plus[entity_type][entity_id][0][0]
-                    err = MarkupError('Unknown ID %s' % entity_id)
+                    err = UnknownIDError(entity_id, annot_id)
                     self.errors.append(err, annot_id)
                 else:
                     base.extend(d_plus[entity_type][entity_id])
 
-        return d_base
+        # now create entity objects from the definition blocks
 
-    def _create_entities(self, e_dict):
-        for entity_type in e_dict:
-            for entity_id in e_dict[entity_type]:
-                (cls, an) = entities[entity_type]
-                ent = cls(self, entity_id, e_dict[entity_type][entity_id])
-                d = getattr(self, an)
-                d[ent.id] = ent
+        for entity_type in d_base:
+            for entity_id in d_base[entity_type]:
+                cls = entities[entity_type]
+                ent = cls(self, entity_id, d_base[entity_type][entity_id])
+                self.entities[entity_type][ent.id] = ent
+
         return
 
 def annot_url(annot_id):
