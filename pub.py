@@ -3,28 +3,43 @@ import httplib
 import urllib
 import cgi
 
-class MarkupError:
+class PubError:
 
-    """exception for parse or markup errors"""
+    """base class for publication errors
+
+    these are not derived from Exception because they are not errors to be 
+    caught in code
+    """
+
+class MarkupError(PubError):
+
+    """parse or markup error
+
+    instances belong to Pub instances and have associated annotations
+    """
 
     def __init__(self, msg, annotation_id):
         self.msg = msg
         self.annotation_id = annotation_id
         return
 
-    def __str__(self):
-        return 'Markup error: %s in annotation %s' % (self.msg, self.annotation_id)
+    def render(self):
+        fmt = '<a href="%s">%s in annotation</a>'
+        return fmt % (annot_url(self.annotation_id), cgi.escape(self.msg))
 
-class LinkError:
+class LinkError(PubError):
 
-    """exception for missing links"""
+    """missing link error
+
+    instances belong to entities
+    """
 
     def __init__(self, msg):
         self.msg = msg
         return
 
-    def __str__(self):
-        return 'Link error: %s' % self.msg
+    def render(self):
+        return cgi.escape(self.msg)
 
 class Entity:
 
@@ -51,7 +66,7 @@ class Entity:
                 setattr(self, an, None)
         for name in field_dict:
             annot_id = field_dict[name][0][0]
-            err = MarkupError('unknown field %s' % name, annot_id)
+            err = MarkupError('unknown field "%s"' % name, annot_id)
             self.errors.append(err)
         return
 
@@ -63,7 +78,7 @@ class Entity:
         else:
             output += '<p>Errors:</p>\n'
             for error in self.errors:
-                output += '<p>%s</p>\n' % cgi.escape(str(error))
+                output += '<p>%s</p>\n' % error.render()
         output += '<ul>\n'
         output += '<li>ID: %s</li>\n' % cgi.escape(self.id)
         for (an, _, display) in self.attributes:
@@ -402,5 +417,12 @@ class Publication:
                 err = LinkError(fmt % r.modelapplication)
                 r.errors.append(err)
         return
+
+def annot_url(annot_id):
+    """annot_url(annot_id) -> url
+
+    generate the URL for a hypothes.is annotation
+    """
+    return 'http://hypothes.is/a/%s' % annot_id
 
 # eof

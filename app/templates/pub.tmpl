@@ -16,7 +16,7 @@
 {% else %}
     <h2>Errors</h2>
     {% for error in pub.errors %}
-        <p>{{ error }}</p>
+        <p>{{ error.render() }}</p>
     {% endfor %}
 {% endif %}
 </p>
