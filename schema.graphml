@@ -123,9 +123,9 @@ SubjectGroup<y:LabelModel>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasLineColor="false" height="15.77734375" modelName="internal" modelPosition="t" textColor="#000000" visible="true" width="33.8291015625" x="39.58544921875" y="4.0">Result</y:NodeLabel>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="98.21875" modelName="custom" textColor="#000000" visible="true" width="95.435546875" x="2.0" y="27.77734375">ID
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="98.21875" modelName="custom" textColor="#000000" visible="true" width="88.404296875" x="2.0" y="27.77734375">ID
 Value
-InteractionVariable
+Variable
 F
 P
 Interpretation
@@ -315,7 +315,7 @@ Observation<y:LabelModel>
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="crows_foot_one" target="crows_foot_many"/>
+          <y:Arrows source="crows_foot_many" target="crows_foot_many"/>
           <y:BendStyle smoothed="false"/>
         </y:PolyLineEdge>
       </data>
