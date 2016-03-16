@@ -125,8 +125,6 @@ class Entity:
 
 class SubjectGroup(Entity):
 
-    prefix = 'sg'
-
     # attribute, key, display
     attributes = (('diagnosis', 'diagnosis', 'Diagnosis'), 
                   ('n_subjects', 'nsubjects', 'Subjects'), 
@@ -142,8 +140,6 @@ class SubjectGroup(Entity):
         return
 
 class AcquisitionInstrument(Entity):
-
-    prefix = 'ai'
 
     attributes = (('type', 'type', 'Type'), 
                   ('location', 'location', 'Location'), 
@@ -164,8 +160,6 @@ class AcquisitionInstrument(Entity):
 
 class Acquisition(Entity):
 
-    prefix = 'a'
-
     attributes = (('type', 'type', 'type'), 
                   ('acquisitioninstrument', 'acquisitioninstrument', 'Acquisition Instrument'))
 
@@ -183,8 +177,6 @@ class Acquisition(Entity):
         return
 
 class Data(Entity):
-
-    prefix = 'd'
 
     attributes = (('url', 'url', 'URL'), 
                   ('doi', 'doi', 'DOI'), 
@@ -209,8 +201,6 @@ class Data(Entity):
 
 class AnalysisWorkflow(Entity):
 
-    prefix = 'aw'
-
     attributes = (('method', 'method', 'Method'), 
                   ('methodurl', 'methodurl', 'Method URL'), 
                   ('software', 'software', 'Software'))
@@ -226,8 +216,6 @@ class AnalysisWorkflow(Entity):
         return
 
 class Observation(Entity):
-
-    prefix = 'o'
 
     attributes = (('data', 'data', 'Data'), 
                   ('analysisworkflow', 'analysisworkflow', 'Analysis Workflow'), 
@@ -253,8 +241,6 @@ class Observation(Entity):
         return
 
 class Model(Entity):
-
-    prefix = 'm'
 
     attributes = (('variables', 'variable', 'Variables'), )
 
@@ -287,8 +273,6 @@ class Model(Entity):
 
 class ModelApplication(Entity):
 
-    prefix = 'ma'
-
     attributes = (('observations', 'observation', 'Observations'), 
                   ('model', 'model', 'Model'), 
                   ('url', 'url', 'URL'), 
@@ -316,8 +300,6 @@ class ModelApplication(Entity):
         return
 
 class Result(Entity):
-
-    prefix = 'r'
 
     attributes = (('modelapplication', 'modelapplication', 'Model Application'), 
                   ('value', 'value', 'Value'), 
