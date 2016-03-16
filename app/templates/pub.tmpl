@@ -23,8 +23,8 @@
             <div class="error">{{ error.render() }}</div>
         {% endfor %}
         <ul class="fields">
-            {% for (an, _, display) in ent.attributes %}
-                <li>{{ display }}: {{ ent.display_value(an) }}</li>
+            {% for field in ent.fields.itervalues() %}
+                <li>{{ field.display_name }}: {{ field.render_value() }} </li>
             {% endfor %}
         </ul>
         <div class="points">

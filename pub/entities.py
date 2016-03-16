@@ -1,5 +1,7 @@
+from collections import OrderedDict
 from .errors import *
 from .utils import annot_url
+from .fields import *
 
 class Entity:
 
@@ -7,31 +9,18 @@ class Entity:
 
     multi_attrs = ()
 
-    def __init__(self, pub, id, fields):
+    def __init__(self, pub, id, values):
         self.pub = pub
         self.id = id
         self.annotation_ids = set()
         self.errors = []
         self.points = []
-        field_dict = {}
-        for (annotation_id, name, value) in fields:
-            field_dict.setdefault(name, [])
-            field_dict[name].append((annotation_id, value))
+        for (annotation_id, name, value) in values:
             self.annotation_ids.add(annotation_id)
-        for (an, name, _) in self.attributes:
-            if name in field_dict:
-                vals = [ el[1] for el in field_dict[name] ]
-                if an in self.multi_attrs:
-                    setattr(self, an, vals)
-                else:
-                    setattr(self, an, vals[0])
-                del field_dict[name]
+            if name in self.fields:
+                self.fields[name].set(value)
             else:
-                setattr(self, an, None)
-        for name in field_dict:
-            annot_id = field_dict[name][0][0]
-            err = UnknownFieldError(name, annot_id)
-            self.errors.append(err)
+                self.errors.append(UnknownFieldError(name, annotation_id))
         return
 
     def score(self):
@@ -44,22 +33,6 @@ class Entity:
             s += val
         return (s, max)
 
-    def __getitem__(self, key):
-        for (an, _, _) in self.attributes:
-            if key == an:
-                break
-        else:
-            raise KeyError(key)
-        return getattr(self, key)
-
-    def display_value(self, key):
-        value = self[key]
-        if value is None:
-            return ''
-        if isinstance(value, list):
-            return ', '.join(value)
-        return value
-
     def annotation_links(self):
         for annot_id in self.annotation_ids:
             url = annot_url(annot_id)
@@ -68,34 +41,41 @@ class Entity:
 
 class SubjectGroup(Entity):
 
-    # attribute, key, display
-    attributes = (('diagnosis', 'diagnosis', 'Diagnosis'), 
-                  ('n_subjects', 'nsubjects', 'Subjects'), 
-                  ('age_mean', 'agemean', 'Age mean'), 
-                  ('age_sd', 'agesd', 'Age SD'))
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['diagnosis'] = Field('Diagnosis')
+        self.fields['nsubjects'] = Field('Subjects')
+        self.fields['agemean'] = Field('Age mean')
+        self.fields['agesd'] = Field('Age SD')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((5, 'Just for being'))
         # check for missing fields
-        for (an, name, _) in self.attributes:
-            if not getattr(self, an):
+        for (name, field) in self.fields.iteritems():
+            if not field.value:
                 self.points.append((-1, 'Missing %s' % name))
         return
 
 class AcquisitionInstrument(Entity):
 
-    attributes = (('type', 'type', 'Type'), 
-                  ('location', 'location', 'Location'), 
-                  ('field', 'field', 'Field'), 
-                  ('manufacturer', 'manufacturer', 'Manufacturer'), 
-                  ('model', 'model', 'Model'))
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['type'] = Field('Type')
+        self.fields['location'] = Field('Location')
+        self.fields['field'] = Field('Field')
+        self.fields['manufacturer'] = Field('Manufacturer')
+        self.fields['model'] = Field('Model')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((7, 'Just for being'))
         # check for missing fields
-        for (an, name, _) in self.attributes:
-            if not getattr(self, an):
-                if an == 'field':
+        for (name, field) in self.fields.iteritems():
+            if not field.value:
+                if name == 'field':
                     self.points.append((-2, 'Missing %s' % name))
                 else:
                     self.points.append((-1, 'Missing %s' % name))
@@ -103,50 +83,63 @@ class AcquisitionInstrument(Entity):
 
 class Acquisition(Entity):
 
-    attributes = (('type', 'type', 'type'), 
-                  ('acquisitioninstrument', 'acquisitioninstrument', 'Acquisition Instrument'))
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['type'] = Field('Type')
+        self.fields['acquisitioninstrument'] = Field('Acquisition Instrument')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((3, 'Just for being'))
         # check for missing fields
-        if not self.type:
+        if not self.fields['type'].value:
             self.points.append((-1, 'Missing type'))
-        if not self.acquisitioninstrument:
+        ai = self.fields['acquisitioninstrument'].value
+        if not ai:
             self.points.append((-1, 'Missing acquisition instrument'))
-        elif self.acquisitioninstrument not in self.pub.entities['AcquisitionInstrument']:
-            fmt = 'Undefined acquisition instrument "%s"'
-            msg = fmt % self.acquisitioninstrument
+        elif ai not in self.pub.entities['AcquisitionInstrument']:
+            msg = 'Undefined acquisition instrument "%s"' % ai
             self.errors.append(LinkError(msg))
         return
 
 class Data(Entity):
 
-    attributes = (('url', 'url', 'URL'), 
-                  ('doi', 'doi', 'DOI'), 
-                  ('acquisition', 'acquisition', 'acquisition'), 
-                  ('subjectgroup', 'subjectgroup', 'subjectgroup'))
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['url'] = Field('URL')
+        self.fields['doi'] = Field('DOI')
+        self.fields['acquisition'] = Field('Acquisition')
+        self.fields['subjectgroup'] = Field('Subject Group')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((10, 'Just for being'))
-        if not self.url and not self.doi:
+        if not self.fields['url'].value and not self.fields['doi'].value:
             self.points.append((-5, 'No link to data (DOI or URL)'))
-        if not self.subjectgroup:
+        sg = self.fields['subjectgroup'].value
+        if not sg:
             self.points.append((-1, 'Missing subject group'))
-        elif self.subjectgroup not in self.pub.entities['SubjectGroup']:
-            msg = 'Undefined subjectgroup "%s"' % self.subjectgroup
-            self.errors.append(LinkError(msg))
-        if not self.acquisition:
+        elif sg not in self.pub.entities['SubjectGroup']:
+            msg = 'Undefined subjectgroup "%s"' % sg
+            self.errors.append(LinkError('Undefined subjectgroup "%s"' % sg))
+        a = self.fields['acquisition'].value
+        if not a:
             self.points.append((-1, 'Missing acquisition'))
-        elif self.acquisition not in self.pub.entities['Acquisition']:
-            msg = 'Undefined acquisition "%s"' % self.acquisition
-            self.errors.append(LinkError(msg))
+        elif a not in self.pub.entities['Acquisition']:
+            self.errors.append(LinkError('Undefined acquisition "%s"' % a))
         return
 
 class AnalysisWorkflow(Entity):
 
-    attributes = (('method', 'method', 'Method'), 
-                  ('methodurl', 'methodurl', 'Method URL'), 
-                  ('software', 'software', 'Software'))
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['method'] = Field('Method')
+        self.fields['methodurl'] = Field('Method URL')
+        self.fields['software'] = Field('Software')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((5, 'Just for being'))
@@ -156,50 +149,60 @@ class AnalysisWorkflow(Entity):
             self.points.append((-2, 'Missing method URL'))
         if not self.software:
             self.points.append((-1, 'Missing software'))
+        for (name, field) in self.fields.iteritems():
+            if not field.value:
+                if name == 'methodurl':
+                    self.points.append((-2, 'Missing %s' % name))
+                else:
+                    self.points.append((-1, 'Missing %s' % name))
         return
 
 class Observation(Entity):
 
-    attributes = (('data', 'data', 'Data'), 
-                  ('analysisworkflow', 'analysisworkflow', 'Analysis Workflow'), 
-                  ('measure', 'measure', 'Measure'))
-
-    multi_attrs = ('data', )
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['data'] = MultiField('Data')
+        self.fields['analysisworkflow'] = Field('Analysis Workflow')
+        self.fields['measure'] = Field('Measure')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((10, 'Just for being'))
-        if not self.measure:
+        if not self.fields['measure'].value:
             self.points.append((-5, 'No measure'))
-        if not self.data:
+        if not self.fields['data'].value:
             self.points.append((-2, 'Missing data'))
         else:
-            for data in self.data:
+            for data in self.fields['data'].value:
                 if data not in self.pub.entities['Data']:
                     self.errors.append(LinkError('Undefined data %s' % data))
-        if not self.analysisworkflow:
+        aw = self.fields['analysisworkflow'].value
+        if not aw:
             self.points.append((-2, 'Missing analysis workflow'))
-        elif self.analysisworkflow not in self.pub.entities['AnalysisWorkflows']:
-            msg = 'Undefined analysis workflow %s' % self.analysisworkflow
-            self.errors.append(LinkError(msg))
+        elif aw not in self.pub.entities['AnalysisWorkflows']:
+            self.errors.append(LinkError('Undefined analysis workflow %s' % aw))
         return
 
 class Model(Entity):
 
-    attributes = (('variables', 'variable', 'Variables'), )
-
-    multi_attrs = ('variables', )
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['variable'] = MultiField('Variables')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((5, 'Just for being'))
         # check if any variables are defined
         # check for bad interaction variables
-        if not self.variables:
+        if not self.fields['variable'].value:
             self.points.append((-4, 'No variables defined'))
         else:
             simple_vars = []
             int_vars = []
             bad_components = set()
-            for var in self.variables:
+            for var in self.fields['variable'].value:
                 if '+' in var:
                     int_vars.append(var)
                 else:
@@ -216,69 +219,76 @@ class Model(Entity):
 
 class ModelApplication(Entity):
 
-    attributes = (('observations', 'observation', 'Observations'), 
-                  ('model', 'model', 'Model'), 
-                  ('url', 'url', 'URL'), 
-                  ('software', 'software', 'Software'))
-
-    multi_attrs = ('observations', )
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['observation'] = MultiField('Observations')
+        self.fields['model'] = Field('Model')
+        self.fields['url'] = Field('URL')
+        self.fields['software'] = Field('Software')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((11, 'Just for being'))
-        if not self.url:
+        if not self.fields['url'].value:
             self.points.append((-5, 'No link to analysis'))
-        if not self.software:
+        if not self.fields['software'].value:
             self.points.append((-1, 'Software undefined'))
-        if not self.model:
+        if not self.fields['model'].value:
             self.points.append((-2, 'Model undefined'))
-        elif self.model not in self.pub.entities['Model']:
-            self.errors.append(LinkError('Undefined model %s' % self.model))
-        if not self.observations:
+        else:
+            model = self.fields['model'].value
+            if model not in self.pub.entities['Model']:
+                self.errors.append(LinkError('Undefined model %s' % model))
+        if not self.fields['observation'].value:
             self.points.append((-2, 'No observations defined'))
         else:
-            for o in self.observations:
+            for o in self.fields['observation'].value:
                 if o not in self.pub.entities['Observation']:
-                    err = LinkError('Undefined observation %s' % o)
+                    err = LinkError('Undefined observation "%s"' % o)
                     self.errors.append(err)
         return
 
 class Result(Entity):
 
-    attributes = (('modelapplication', 'modelapplication', 'Model Application'), 
-                  ('value', 'value', 'Value'), 
-                  ('variables', 'variable', 'Variables'), 
-                  ('f', 'f', 'f'), 
-                  ('p', 'p', 'p'), 
-                  ('interpretation', 'interpretation', 'Interpretation'))
-
-    multi_attrs = ('interactinovariables', )
+    def __init__(self, pub, id, values):
+        self.fields = OrderedDict()
+        self.fields['modelapplication'] = Field('Model Application')
+        self.fields['value'] = Field('Value')
+        self.fields['variables'] = MultiField('Variables')
+        self.fields['f'] = Field('f')
+        self.fields['p'] = Field('p')
+        self.fields['interpretation'] = Field('Interpretation')
+        Entity.__init__(self, pub, id, values)
+        return
 
     def check(self):
         self.points.append((23, 'Just for being'))
-        if not self.value:
+        if not self.fields['value'].value:
             self.points.append((-3, 'Value undefined'))
-        if not self.f:
+        if not self.fields['f'].value:
             self.points.append((-2, 'F undefined'))
-        if not self.p:
+        if not self.fields['p'].value:
             self.points.append((-5, 'P undefined'))
-        if not self.interpretation:
+        if not self.fields['interpretation'].value:
             self.points.append((-2, 'Interpretation undefined'))
-        if not self.modelapplication:
+        ma = self.fields['modelapplication'].value
+        if not ma:
             self.points.append((-5, 'No model application given'))
             model_vars = None
-        elif self.modelapplication not in self.pub.entities['ModelApplication']:
-            msg = 'Undefined model application %s' % self.modelapplication
-            self.errors.append(LinkError(msg))
+        elif ma not in self.pub.entities['ModelApplication']:
+            self.errors.append(LinkError('Undefined model application %s' % ma))
             model_vars = None
         else:
-            ma = self.pub.entities['ModelApplication'][self.modelapplication]
-            if not ma.model:
+            ma_obj = self.pub.entities['ModelApplication'][ma]
+            m = ma_obj.fields['model'].value
+            if not m:
                 model_vars = None
-            elif ma.model not in self.pub.entities['Model']:
+            elif m not in self.pub.entities['Model']:
                 model_vars = None
             else:
-                model_vars = self.pub.entities['Model'][ma.model]
-        if not self.variables:
+                model_vars = self.pub.entities['Model'][m]
+        if not self.fields['variables'].value:
             self.points.append((-5, 'No variables defined'))
         else:
             if not model_vars:
