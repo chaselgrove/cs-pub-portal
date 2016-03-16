@@ -17,7 +17,7 @@
 
 {% macro entity(ent) %}
     <div class="entity">
-        {{ ent.id }}
+        <div class="ent_id">{{ ent.id }}</div>
         {% for error in ent.errors %}
             <div class="error">{{ error.render() }}</div>
         {% endfor %}
@@ -29,6 +29,13 @@
                 <li>{{ display }}: {{ ent.display_value(an) }}</li>
             {% endfor %}
         </ul>
+        <div class="annot_links">
+            Annotations
+            {% for annot_link in ent.annotation_links() %}
+                <br/>
+                {{ annot_link }}
+            {% endfor %}
+        </div>
     </div>
 {% endmacro %}
 
@@ -41,9 +48,7 @@ PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/
 </div>
 
 <div id="summary">
-    {% if not pub.errors %}
-        <p>No errors</p>
-    {% else %}
+    {% if pub.errors %}
         <h2>Errors</h2>
         {% for error in pub.errors %}
             <p>{{ error.render() }}</p>

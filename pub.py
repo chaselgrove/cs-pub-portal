@@ -24,7 +24,7 @@ class MarkupError(PubError):
         return
 
     def render(self):
-        fmt = '<a href="%s">%s in annotation</a>'
+        fmt = '<a href="%s">%s</a>'
         return fmt % (annot_url(self.annotation_id), cgi.escape(self.msg))
 
 class LinkError(PubError):
@@ -54,7 +54,7 @@ class MissingFieldWarning(PubWarning):
         return
 
     def render(self):
-        return 'Missing field %s' % cgi.escape(self.field)
+        return 'Missing field "%s"' % cgi.escape(self.field)
 
 class Entity:
 
@@ -64,12 +64,14 @@ class Entity:
 
     def __init__(self, id, fields):
         self.id = id
+        self.annotation_ids = set()
         self.errors = []
         self.warnings = []
         field_dict = {}
         for (annotation_id, name, value) in fields:
             field_dict.setdefault(name, [])
             field_dict[name].append((annotation_id, value))
+            self.annotation_ids.add(annotation_id)
         for (an, name, _) in self.attributes:
             if name in field_dict:
                 vals = [ el[1] for el in field_dict[name] ]
@@ -102,6 +104,12 @@ class Entity:
         if isinstance(value, list):
             return ', '.join(value)
         return value
+
+    def annotation_links(self):
+        for annot_id in self.annotation_ids:
+            url = annot_url(annot_id)
+            yield '<a href="%s">%s</a>' % (url, annot_id)
+        return
 
 class SubjectGroup(Entity):
 
@@ -163,16 +171,18 @@ class Model(Entity):
 
     attributes = (('variables', 'variable', 'Variables'), )
 
-    mutli_attrs = ('variable', )
+    multi_attrs = ('variables', )
 
 class ModelApplication(Entity):
 
     prefix = 'ma'
 
-    attributes = (('observation', 'observation', 'Observation'), 
+    attributes = (('observations', 'observation', 'Observations'), 
                   ('model', 'model', 'Model'), 
                   ('url', 'url', 'URL'), 
                   ('software', 'software', 'Software'))
+
+    multi_attrs = ('observations', )
 
 class Result(Entity):
 
@@ -180,7 +190,7 @@ class Result(Entity):
 
     attributes = (('modelapplication', 'modelapplication', 'Model Application'), 
                   ('value', 'value', 'Value'), 
-                  ('interactionvariables', 'interactionvariable', 'Interaction variables'), 
+                  ('variables', 'variable', 'Variables'), 
                   ('f', 'f', 'f'), 
                   ('p', 'p', 'p'), 
                   ('interpretation', 'interpretation', 'Interpretation'))
@@ -413,11 +423,13 @@ class Publication:
                 ma.errors.append(LinkError('No model given'))
             elif ma.model not in self.models:
                 ma.errors.append(LinkError('Undefined model "%s"' % ma.model))
-            if not ma.observation:
-                ma.errors.append(LinkError('No observation given'))
-            elif ma.observation not in self.observations:
-                err = LinkError('Undefined observation "%s"' % ma.observation)
-                ma.errors.append(err)
+            if not ma.observations:
+                ma.errors.append(LinkError('No observations given'))
+            else:
+                for observation in ma.observations:
+                    if observation not in self.observations:
+                        msg = 'Undefined observation "%s"' % observation
+                        ma.errors.append(LinkError(msg))
         for r in self.results.itervalues():
             if not r.modelapplication:
                 r.errors.append(LinkError('No model application given'))
