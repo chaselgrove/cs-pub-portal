@@ -147,14 +147,17 @@ ModelApplication<y:LabelModel>
       <data key="d4"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
-          <y:Geometry height="90.0" width="113.0" x="246.0" y="298.5"/>
+          <y:Geometry height="118.0" width="113.0" x="246.0" y="286.75"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasLineColor="false" height="15.77734375" modelName="internal" modelPosition="t" textColor="#000000" visible="true" width="88.8779296875" x="12.06103515625" y="4.0">AnalysisWorkflow</y:NodeLabel>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="51.109375" modelName="custom" textColor="#000000" visible="true" width="59.1513671875" x="2.0" y="27.77734375">ID
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="86.44140625" modelName="custom" textColor="#000000" visible="true" width="86.041015625" x="2.0" y="27.77734375">ID
 Method
 MethodURL
-Software<y:LabelModel>
+Software
+SoftwareNITRCID
+SoftwareRRID
+SoftwareURL<y:LabelModel>
               <y:ErdAttributesNodeLabelModel/>
             </y:LabelModel>
             <y:ModelParameter>
