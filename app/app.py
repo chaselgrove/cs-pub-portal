@@ -5,21 +5,24 @@ app = flask.Flask(__name__, static_url_path='')
 
 @app.route('/')
 def index():
+    pmid = flask.request.args.get('pmid')
+    if pmid:
+        return flask.redirect(flask.url_for('publication', pmid=pmid))
     return flask.render_template('index.tmpl', root=flask.request.script_root)
 
-@app.route('/pmc')
-@app.route('/pmc/')
-def pmc_redir():
-    pmc_id = flask.request.args.get('pmc_id')
-    if not pmc_id:
-        return flask.redirect(flask.url_for('index'))
-    return flask.redirect(flask.url_for('publication', pmc_id=pmc_id))
-
-@app.route('/pmc/<pmc_id>')
-def publication(pmc_id):
-    publication = pub.Publication(pmc_id)
+@app.route('/pm/<pmid>')
+def publication(pmid):
+    error = None
+    publication = None
+    try:
+        publication = pub.Publication(pmid)
+    except ValueError:
+        error = 'Bad PMID'
+    except pub.PublicationNotFoundError:
+        error = 'Publication not found'
     return flask.render_template('pub.tmpl', 
                                  root=flask.request.script_root, 
+                                 error=error, 
                                  pub=publication)
 
 if __name__ == '__main__':

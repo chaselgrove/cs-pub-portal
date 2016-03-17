@@ -7,9 +7,10 @@
             None
         {% else %}
             <div class="entities">
-                {% for e in entities.itervalues() %}
-                    {{ entity(e) }}
+                {% for en in entities|sort %}
+                    {{ entity(entities[en]) }}
                 {% endfor %}
+                <div class="clear">&nbsp;</div>
             </div>
         {% endif %}
     </div>
@@ -17,56 +18,85 @@
 
 {% macro entity(ent) %}
     <div class="entity">
-        {{ ent.id }}
-        {% for error in ent.errors %}
-            <div class="error">{{ error.render() }}</div>
-        {% endfor %}
-        {% for warning in ent.warnings %}
-            <div class="warning">{{ warning.render() }}</div>
-        {% endfor %}
+        <div class="header">
+            {% set (score, max_score) = ent.score() %}
+            <div class="id">{{ ent.id }}</div>
+            <div class="score">{{ score }}/{{ max_score }}</div>
+        </div>
+        <div class="clear">&nbsp;</div>
+         {% for error in ent.errors %}
+             <div class="error">{{ error.render() }}</div>
+         {% endfor %}
         <ul class="fields">
-            {% for (an, _, display) in ent.attributes %}
-                <li>{{ display }}: {{ ent.display_value(an) }}</li>
+            {% for field in ent.fields.itervalues() %}
+                <li>{{ field.display_name }}: {{ field.render_value() }}</li>
             {% endfor %}
+        </ul>
+        <div class="annot_links">
+            Defined in:
+            <ul>
+            {% for annot_link in ent.annotation_links() %}
+                <li>{{ annot_link }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+        <ul class="points">
+        {% for (value, note) in ent.points %}
+            {% if value > 0 %}
+                <li><span class="value">+{{ value }}</span> <span class="note">{{ note }}</span></li>
+            {% else %}
+                <li><span class="value">{{ value }}</span> <span class="note">{{ note }}</span></li>
+            {% endif %}
+        {% endfor %}
         </ul>
     </div>
 {% endmacro %}
 
-{% block title %}PMC {{ pub.pmc_id }} - CANDI Share Publication Portal{% endblock %}
+{% block title %}PMID {{ pub.pmid }} - CANDI Share Publication Portal{% endblock %}
 
 {% block body %}
 
-<div id="pub_link">
-PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
-</div>
+{% if error %}
+    <p class="error">{{ error }}</p>
+{% else %}
 
-<div id="summary">
-    {% if not pub.errors %}
-        <p>No errors</p>
-    {% else %}
-        <h2>Errors</h2>
-        {% for error in pub.errors %}
-            <p>{{ error.render() }}</p>
-        {% endfor %}
-    {% endif %}
-</div>
+    <div id="pub_link">
+        PMID <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid }}">{{ pub.pmid }}</a>
+        <br/>
+        Markup via PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
+    </div>
 
-{{ entity_group('Subject Groups', pub.subjectgroups) }}
+    <div id="summary">
+        {{ pub.title }}
+        <br/>
+        {% if pub.errors %}
+            <h2>Errors</h2>
+            {% for error in pub.errors %}
+                <p>{{ error.render() }}</p>
+            {% endfor %}
+        {% endif %}
+        {% set (score, max_score) = pub.score() %}
+        Score: {{ score }}/{{ max_score }}
+    </div>
 
-{{ entity_group('Acquisition Instruments', pub.acquisitioninstruments) }}
+    {{ entity_group('Subject Groups', pub.entities['SubjectGroup']) }}
 
-{{ entity_group('Acquisitions', pub.acquisitions) }}
+    {{ entity_group('Acquisition Instruments', pub.entities['AcquisitionInstrument']) }}
 
-{{ entity_group('Data', pub.data ) }}
+    {{ entity_group('Acquisitions', pub.entities['Acquisition']) }}
 
-{{ entity_group('Analysis Workflows', pub.analysisworkflows) }}
+    {{ entity_group('Data', pub.entities['Data']) }}
 
-{{ entity_group('Observations', pub.observations) }}
+    {{ entity_group('Analysis Workflows', pub.entities['AnalysisWorkflow']) }}
 
-{{ entity_group('Models', pub.models) }}
+    {{ entity_group('Observations', pub.entities['Observation']) }}
 
-{{ entity_group('Model Applications', pub.modelapplications) }}
+    {{ entity_group('Models', pub.entities['Model']) }}
 
-{{ entity_group('Results', pub.results) }}
+    {{ entity_group('Model Applications', pub.entities['ModelApplication']) }}
+
+    {{ entity_group('Results', pub.entities['Result']) }}
+
+{% endif %}
 
 {% endblock %}
