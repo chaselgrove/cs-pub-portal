@@ -15,6 +15,9 @@ class Entity:
         self.annotation_ids = set()
         self.errors = []
         self.points = []
+        self.fields = OrderedDict()
+        for (key, cls, display_name) in self.field_defs:
+            self.fields[key] = cls(display_name)
         for (annotation_id, name, value) in values:
             self.annotation_ids.add(annotation_id)
             if name in self.fields:
@@ -41,10 +44,10 @@ class Entity:
 
 class SubjectGroup(Entity):
 
-    fields = OrderedDict((('diagnosis', Field('Diagnosis')), 
-                          ('nsubjects', Field('Subjects')), 
-                          ('agemean', Field('Age mean')), 
-                          ('agesd', Field('Age SD'))))
+    field_defs = (('diagnosis', Field, 'Diagnosis'), 
+                  ('nsubjects', Field, 'Subjects'), 
+                  ('agemean', Field, 'Age mean'), 
+                  ('agesd', Field, 'Age SD'))
 
     def check(self):
         self.points.append((5, 'Existential credit'))
@@ -56,11 +59,11 @@ class SubjectGroup(Entity):
 
 class AcquisitionInstrument(Entity):
 
-    fields = OrderedDict((('type', Field('Type')), 
-                          ('location', Field('Location')), 
-                          ('field', Field('Field')), 
-                          ('manufacturer', Field('Manufacturer')), 
-                          ('model', Field('Model'))))
+    field_defs = (('type', Field, 'Type'), 
+                  ('location', Field, 'Location'), 
+                  ('field', Field, 'Field'), 
+                  ('manufacturer', Field, 'Manufacturer'), 
+                  ('model', Field, 'Model'))
 
     def check(self):
         self.points.append((7, 'Existential credit'))
@@ -75,19 +78,18 @@ class AcquisitionInstrument(Entity):
 
 class Acquisition(Entity):
 
-    fields = OrderedDict((('type', Field('Type')), 
-                          ('acquisitioninstrument', 
-                           Field('Acquisition Instrument')), 
-                          ('NSlices', Field('N Slices')), 
-                          ('prep', Field('Prep')), 
-                          ('tr', Field('TE')), 
-                          ('te', Field('TR')), 
-                          ('ti', Field('TI')), 
-                          ('flipangle', Field('Flip Angle')), 
-                          ('fov', Field('FOV')), 
-                          ('slicethickness', Field('Slice Thickness')), 
-                          ('matrix', Field('Matrix')), 
-                          ('nexcitations', Field('N Excitations'))))
+    field_defs = (('type', Field, 'Type'), 
+                  ('acquisitioninstrument', Field, 'Acquisition Instrument'), 
+                  ('NSlices', Field, 'N Slices'), 
+                  ('prep', Field, 'Prep'), 
+                  ('tr', Field, 'TE'), 
+                  ('te', Field, 'TR'), 
+                  ('ti', Field, 'TI'), 
+                  ('flipangle', Field, 'Flip Angle'), 
+                  ('fov', Field, 'FOV'), 
+                  ('slicethickness', Field, 'Slice Thickness'), 
+                  ('matrix', Field, 'Matrix'), 
+                  ('nexcitations', Field, 'N Excitations'))
 
     def check(self):
         self.points.append((3, 'Existential credit'))
@@ -104,10 +106,10 @@ class Acquisition(Entity):
 
 class Data(Entity):
 
-    fields = OrderedDict((('url', URLField('URL')), 
-                          ('doi', DOIField('DOI')), 
-                          ('acquisition', Field('Acquisition')), 
-                          ('subjectgroup', Field('Subject Group'))))
+    field_defs = (('url', URLField, 'URL'), 
+                  ('doi', DOIField, 'DOI'), 
+                  ('acquisition', Field, 'Acquisition'), 
+                  ('subjectgroup', Field, 'Subject Group'))
 
     def check(self):
         self.points.append((10, 'Existential credit'))
@@ -128,12 +130,12 @@ class Data(Entity):
 
 class AnalysisWorkflow(Entity):
 
-    fields = OrderedDict((('method', Field('Method')), 
-                          ('methodurl', URLField('Method URL')), 
-                          ('software', Field('Software')), 
-                          ('softwarenitrcid', NITRCIDField('NITRC ID')), 
-                          ('softwarerrid', RRIDField('Software RRID')), 
-                          ('softwareurl', URLField('Software URL'))))
+    field_defs = (('method', Field, 'Method'), 
+                  ('methodurl', URLField, 'Method URL'), 
+                  ('software', Field, 'Software'), 
+                  ('softwarenitrcid', NITRCIDField, 'NITRC ID'), 
+                  ('softwarerrid', RRIDField, 'Software RRID'), 
+                  ('softwareurl', URLField, 'Software URL'))
 
     def check(self):
         self.points.append((7, 'Existential credit'))
@@ -151,9 +153,9 @@ class AnalysisWorkflow(Entity):
 
 class Observation(Entity):
 
-    fields = OrderedDict((('data', MultiField('Data')), 
-                          ('analysisworkflow', Field('Analysis Workflow')), 
-                          ('measure', Field('Measure'))))
+    field_defs = (('data', MultiField, 'Data'), 
+                  ('analysisworkflow', Field, 'Analysis Workflow'), 
+                  ('measure', Field, 'Measure'))
 
     def check(self):
         self.points.append((10, 'Existential credit'))
@@ -175,7 +177,7 @@ class Observation(Entity):
 
 class Model(Entity):
 
-    fields = OrderedDict((('variable', MultiField('Variables')),))
+    field_defs = (('variable', MultiField, 'Variables'),)
 
     def check(self):
         self.points.append((5, 'Existential credit'))
@@ -204,10 +206,10 @@ class Model(Entity):
 
 class ModelApplication(Entity):
 
-    fields = OrderedDict((('observation', MultiField('Observations')), 
-                          ('model', Field('Model')), 
-                          ('url', URLField('URL')), 
-                          ('software', Field('Software'))))
+    field_defs = (('observation', MultiField, 'Observations'), 
+                  ('model', Field, 'Model'), 
+                  ('url', URLField, 'URL'), 
+                  ('software', Field, 'Software'))
 
     def check(self):
         self.points.append((11, 'Existential credit'))
@@ -232,12 +234,12 @@ class ModelApplication(Entity):
 
 class Result(Entity):
 
-    fields = OrderedDict((('modelapplication', Field('Model Application')), 
-                          ('value', Field('Value')), 
-                          ('variable', MultiField('Variables')), 
-                          ('f', Field('f')), 
-                          ('p', Field('p')), 
-                          ('interpretation', Field('Interpretation'))))
+    field_defs = (('modelapplication', Field, 'Model Application'), 
+                  ('value', Field, 'Value'), 
+                  ('variable', MultiField, 'Variables'), 
+                  ('f', Field, 'f'), 
+                  ('p', Field, 'p'), 
+                  ('interpretation', Field, 'Interpretation'))
 
     def check(self):
         self.points.append((23, 'Existential credit'))
