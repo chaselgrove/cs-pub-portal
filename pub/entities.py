@@ -158,18 +158,19 @@ class Observation(Entity):
     def check(self):
         self.points.append((10, 'Just for being'))
         if not self.fields['measure'].value:
-            self.points.append((-5, 'No measure'))
+            self.points.append((-5, 'Missing measure'))
         if not self.fields['data'].value:
             self.points.append((-2, 'Missing data'))
         else:
             for data in self.fields['data'].value:
                 if data not in self.pub.entities['Data']:
-                    self.errors.append(LinkError('Undefined data %s' % data))
+                    self.errors.append(LinkError('Undefined data "%s"' % data))
         aw = self.fields['analysisworkflow'].value
         if not aw:
             self.points.append((-2, 'Missing analysis workflow'))
         elif aw not in self.pub.entities['AnalysisWorkflows']:
-            self.errors.append(LinkError('Undefined analysis workflow %s' % aw))
+            err = LinkError('Undefined analysis workflow "%s"' % aw)
+            self.errors.append(err)
         return
 
 class Model(Entity):
@@ -213,15 +214,15 @@ class ModelApplication(Entity):
         if not self.fields['url'].value:
             self.points.append((-5, 'No link to analysis'))
         if not self.fields['software'].value:
-            self.points.append((-1, 'Software undefined'))
+            self.points.append((-1, 'Missing software'))
         if not self.fields['model'].value:
-            self.points.append((-2, 'Model undefined'))
+            self.points.append((-2, 'Missing model'))
         else:
             model = self.fields['model'].value
             if model not in self.pub.entities['Model']:
-                self.errors.append(LinkError('Undefined model %s' % model))
+                self.errors.append(LinkError('Undefined model "%s"' % model))
         if not self.fields['observation'].value:
-            self.points.append((-2, 'No observations defined'))
+            self.points.append((-2, 'Missing observation(s)'))
         else:
             for o in self.fields['observation'].value:
                 if o not in self.pub.entities['Observation']:
@@ -241,19 +242,20 @@ class Result(Entity):
     def check(self):
         self.points.append((23, 'Just for being'))
         if not self.fields['value'].value:
-            self.points.append((-3, 'Value undefined'))
+            self.points.append((-3, 'Missing "Value"'))
         if not self.fields['f'].value:
-            self.points.append((-2, 'F undefined'))
+            self.points.append((-2, 'Missing F'))
         if not self.fields['p'].value:
-            self.points.append((-5, 'P undefined'))
+            self.points.append((-5, 'Missing P'))
         if not self.fields['interpretation'].value:
-            self.points.append((-2, 'Interpretation undefined'))
+            self.points.append((-2, 'Missing interpretation'))
         ma = self.fields['modelapplication'].value
         if not ma:
-            self.points.append((-5, 'No model application given'))
+            self.points.append((-5, 'Missing model application'))
             model_vars = None
         elif ma not in self.pub.entities['ModelApplication']:
-            self.errors.append(LinkError('Undefined model application %s' % ma))
+            err = LinkError('Undefined model application "%s"' % ma)
+            self.errors.append(err)
             model_vars = None
         else:
             ma_obj = self.pub.entities['ModelApplication'][ma]
@@ -265,7 +267,7 @@ class Result(Entity):
             else:
                 model_vars = self.pub.entities['Model'][m]
         if not self.fields['variables'].value:
-            self.points.append((-5, 'No variables defined'))
+            self.points.append((-5, 'Missing variable(s)'))
         else:
             if not model_vars:
                 self.points.append((-2, 'No model variables to check against'))
