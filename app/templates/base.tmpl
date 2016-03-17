@@ -10,9 +10,17 @@
 <body>
 
 <div id="header">
-<a href="{{ root }}">Pub home</a>
+{% if root %}
+    <a href="{{ root }}">Pub home</a>
+{% else %}
+    <a href="/">Pub home</a>
+{% endif %}
 
-<form action="{{ root }}" method="GET">
+{% if root %}
+    <form action="{{ root }}" method="GET">
+{% else %}
+    <form action="/" method="GET">
+{% endif %}
 PubMed ID:
 <input type="text" name="pmid" />
 <input type="submit"/>
