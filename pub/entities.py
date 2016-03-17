@@ -234,7 +234,7 @@ class Result(Entity):
 
     fields = OrderedDict((('modelapplication', Field('Model Application')), 
                           ('value', Field('Value')), 
-                          ('variables', MultiField('Variables')), 
+                          ('variable', MultiField('Variables')), 
                           ('f', Field('f')), 
                           ('p', Field('p')), 
                           ('interpretation', Field('Interpretation'))))
@@ -259,21 +259,22 @@ class Result(Entity):
             model_vars = None
         else:
             ma_obj = self.pub.entities['ModelApplication'][ma]
-            m = ma_obj.fields['model'].value
-            if not m:
+            model_id = ma_obj.fields['model'].value
+            if not model_id:
                 model_vars = None
-            elif m not in self.pub.entities['Model']:
+            elif model_id not in self.pub.entities['Model']:
                 model_vars = None
             else:
-                model_vars = self.pub.entities['Model'][m]
-        if not self.fields['variables'].value:
+                model = self.pub.entities['Model'][model_id]
+                model_vars = model.fields['variable'].value
+        if not self.fields['variable'].value:
             self.points.append((-5, 'Missing variable(s)'))
         else:
             if not model_vars:
                 self.points.append((-2, 'No model variables to check against'))
             else:
                 bad_vars = set()
-                for var in self.variables:
+                for var in self.fields['variable'].value:
                     if var not in model_vars:
                         bad_vars.add(var)
                 if bad_vars:
