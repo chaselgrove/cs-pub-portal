@@ -69,12 +69,22 @@ Model<y:LabelModel>
       <data key="d4"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
-          <y:Geometry height="90.0" width="119.0" x="246.0" y="169.5"/>
+          <y:Geometry height="204.0" width="119.0" x="246.0" y="55.5"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasLineColor="false" height="15.77734375" modelName="internal" modelPosition="t" textColor="#000000" visible="true" width="58.3798828125" x="30.31005859375" y="4.0">Acquisition</y:NodeLabel>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="51.109375" modelName="custom" textColor="#000000" visible="true" width="111.4560546875" x="2.0" y="27.77734375">ID
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="10" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="168.8828125" modelName="custom" textColor="#000000" visible="true" width="111.4560546875" x="2.0" y="27.77734375">ID
 Type
+NSlices
+Prep
+TR
+TE
+TI
+FlipAngle
+FOV
+SliceThickness
+Matrix
+NExcitations
 
 AcquisitionInstrument<y:LabelModel>
               <y:ErdAttributesNodeLabelModel/>
