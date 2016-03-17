@@ -29,7 +29,7 @@
          {% endfor %}
         <ul class="fields">
             {% for field in ent.fields.itervalues() %}
-                <li>{{ field.display_name }}: {{ field.render_value() }} </li>
+                <li>{{ field.display_name }}: {{ field.render_value() }}</li>
             {% endfor %}
         </ul>
         <div class="annot_links">
@@ -83,7 +83,7 @@
 
     {{ entity_group('Acquisition Instruments', pub.entities['AcquisitionInstrument']) }}
 
-    {{ entity_group('Acquisitions', pub.entities['Acquisitions']) }}
+    {{ entity_group('Acquisitions', pub.entities['Acquisition']) }}
 
     {{ entity_group('Data', pub.entities['Data']) }}
 
