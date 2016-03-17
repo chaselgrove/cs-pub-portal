@@ -168,7 +168,7 @@ class Observation(Entity):
         aw = self.fields['analysisworkflow'].value
         if not aw:
             self.points.append((-2, 'Missing analysis workflow'))
-        elif aw not in self.pub.entities['AnalysisWorkflows']:
+        elif aw not in self.pub.entities['AnalysisWorkflow']:
             err = LinkError('Undefined analysis workflow "%s"' % aw)
             self.errors.append(err)
         return
