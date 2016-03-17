@@ -8,11 +8,14 @@
 This is the CANDI Share Publication Portal.
 </p>
 
-<form action="{{ root }}/pmc" method="GET">
-PubMed Central ID:
-<input type="text" name="pmc_id" />
+{% if error %}
+    <p class="error">{{ error }}</p>
+{% endif %}
+
+<form action="{{ root }}" method="GET">
+PubMed ID:
+<input type="text" name="pmid" />
 <input type="submit"/>
 </form>
-
 
 {% endblock %}

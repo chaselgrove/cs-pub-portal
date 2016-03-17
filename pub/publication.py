@@ -1,3 +1,4 @@
+import re
 import httplib
 import urllib
 import json
@@ -5,14 +6,21 @@ import json
 from .entities import *
 from .exceptions import *
 
+pmid_re = re.compile('^\d+$')
+
 class Publication:
 
-    def __init__(self, pmc_id):
-        self.pmc_id = pmc_id
+    def __init__(self, pmid):
+        if not pmid_re.search(pmid):
+            raise ValueError('bad PMID')
+        self.pmid = pmid
+        self.title = None
+        self.pmc_id = None
         self.errors = []
         self.entities = {}
         for et in entities:
             self.entities[et] = {}
+        self._read_pubmed()
         self._read_annotations()
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
@@ -28,6 +36,45 @@ class Publication:
                 s += es
                 max += emax
         return (s, max)
+
+    def _read_pubmed(self):
+
+        """get the pubmed entry
+
+        raises PublicationNotFoundError if the pubmed record is not found
+        """
+
+        conn = httplib.HTTPSConnection('www.ncbi.nlm.nih.gov')
+        params = {'term': self.pmid, 'report': 'medline', 'format': 'text'}
+        url = '/pubmed/?%s' % urllib.urlencode(params)
+        conn.request('GET', url)
+        response = conn.getresponse()
+        if response.status != 200:
+            msg = 'PubMed Central response status %d' % response.status
+            raise PubMedError(msg)
+        data = response.read()
+        conn.close()
+
+        field = None
+        value = None
+        for line in data.split('\n'):
+            if not line.startswith(' ') and '-' in line:
+                if value:
+                    if field == 'TI':
+                        self.title = value
+                    if field == 'PMC':
+                        self.pmc_id = value
+                (field, value) = [ el.strip() for el in line.split('-', 1) ]
+            elif field:
+                value = '%s %s' % (value, line.strip())
+        if value:
+            if field == 'TI':
+                self.title = value
+            if field == 'PMC':
+                self.pmc_id = value
+        if not self.title or not self.pmc_id:
+            raise PublicationNotFoundError(self.pmid)
+        return
 
     def _read_annotations(self):
 
@@ -51,14 +98,16 @@ class Publication:
             bad "name: value" lines
         """
 
-        url = 'http://www.ncbi.nlm.nih.gov/pmc/articles/%s' % self.pmc_id
+        url_fmt = 'http://www.ncbi.nlm.nih.gov/pmc/articles/%s'
+        url = url_fmt % self.pmc_id
 
         conn = httplib.HTTPSConnection('hypothes.is')
         url = '/api/search?%s' % urllib.urlencode({'uri': url})
         conn.request('GET', url, '', {'Accept': 'application/json'})
         response = conn.getresponse()
         if response.status != 200:
-            raise HypothesisError()
+            msg = 'hypothes.is response status %d' % response.status
+            raise HypothesisError(msg)
         data = response.read()
         obj = json.loads(data)
         conn.close()
