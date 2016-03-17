@@ -77,7 +77,17 @@ class Acquisition(Entity):
 
     fields = OrderedDict((('type', Field('Type')), 
                           ('acquisitioninstrument', 
-                           Field('Acquisition Instrument'))))
+                           Field('Acquisition Instrument')), 
+                          ('NSlices', Field('N Slices')), 
+                          ('prep', Field('Prep')), 
+                          ('tr', Field('TE')), 
+                          ('te', Field('TR')), 
+                          ('ti', Field('TI')), 
+                          ('flipangle', Field('Flip Angle')), 
+                          ('fov', Field('FOV')), 
+                          ('slicethickness', Field('Slice Thickness')), 
+                          ('matrix', Field('Matrix')), 
+                          ('nexcitations', Field('N Excitations'))))
 
     def check(self):
         self.points.append((3, 'Just for being'))
@@ -120,22 +130,23 @@ class AnalysisWorkflow(Entity):
 
     fields = OrderedDict((('method', Field('Method')), 
                           ('methodurl', URLField('Method URL')), 
-                          ('software', Field('Software'))))
+                          ('software', Field('Software')), 
+                          ('softwarenitrcid', NITRCIDField('NITRC ID')), 
+                          ('softwarerrid', RRIDField('Software RRID')), 
+                          ('softwareurl', URLField('Software URL'))))
 
     def check(self):
-        self.points.append((5, 'Just for being'))
+        self.points.append((7, 'Just for being'))
         if not self.method:
             self.points.append((-1, 'Missing method'))
         if not self.methodurl:
             self.points.append((-2, 'Missing method URL'))
         if not self.software:
             self.points.append((-1, 'Missing software'))
-        for (name, field) in self.fields.iteritems():
-            if not field.value:
-                if name == 'methodurl':
-                    self.points.append((-2, 'Missing %s' % name))
-                else:
-                    self.points.append((-1, 'Missing %s' % name))
+        if not self.softwarenitrcid \
+            and not self.softwareid \
+            and not self.softwareurl:
+                self.points.append((-2, 'Missing software link'))
         return
 
 class Observation(Entity):

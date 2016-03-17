@@ -20,31 +20,43 @@ class Field(BaseField):
         self.value = value
         return
 
-class URLField(BaseField):
+class URLField(Field):
 
     """URL"""
-
-    def set(self, value):
-        self.value = value
-        return
 
     def render_value(self):
         if self.value is None:
             return ''
         return '<a href="%s">%s</a>' % (self.value, self.value)
 
-class DOIField(BaseField):
+class DOIField(Field):
 
     """DOI"""
-
-    def set(self, value):
-        self.value = value
-        return
 
     def render_value(self):
         if self.value is None:
             return ''
         fmt = '<a href="http://dx.doi.org/%s">%s</a>'
+        return fmt % (self.value, self.value)
+
+class NITRCIDField(Field):
+
+    """NITRC ID"""
+
+    def render_value(self):
+        if self.value is None:
+            return ''
+        fmt = '<a href="http://www.nitrc.org/projects/%s">%s</a>'
+        return fmt % (self.value, self.value)
+
+class RRIDField(Field):
+
+    """RRID"""
+
+    def render_value(self):
+        if self.value is None:
+            return ''
+        fmt = '<a href="https://scicrunch.org/resolver/%s">%s</a>'
         return fmt % (self.value, self.value)
 
 class MultiField(BaseField):
