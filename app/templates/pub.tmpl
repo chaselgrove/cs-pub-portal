@@ -7,8 +7,8 @@
             None
         {% else %}
             <div class="entities">
-                {% for e in entities.itervalues() %}
-                    {{ entity(e) }}
+                {% for en in entities|sort %}
+                    {{ entity(entities[en]) }}
                 {% endfor %}
                 <div class="clear">&nbsp;</div>
             </div>
