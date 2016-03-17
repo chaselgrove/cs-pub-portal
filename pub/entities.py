@@ -137,15 +137,15 @@ class AnalysisWorkflow(Entity):
 
     def check(self):
         self.points.append((7, 'Existential credit'))
-        if not self.method:
+        if not self.fields['method'].value:
             self.points.append((-1, 'Missing method'))
-        if not self.methodurl:
+        if not self.fields['methodurl'].value:
             self.points.append((-2, 'Missing method URL'))
-        if not self.software:
+        if not self.fields['software'].value:
             self.points.append((-1, 'Missing software'))
-        if not self.softwarenitrcid \
-            and not self.softwareid \
-            and not self.softwareurl:
+        if not self.fields['softwarenitrcid'].value \
+            and not self.fields['softwarerrid'].value \
+            and not self.fields['softwareurl'].value:
                 self.points.append((-2, 'Missing software link'))
         return
 
