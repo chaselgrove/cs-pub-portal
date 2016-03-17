@@ -47,7 +47,7 @@ class SubjectGroup(Entity):
                           ('agesd', Field('Age SD'))))
 
     def check(self):
-        self.points.append((5, 'Just for being'))
+        self.points.append((5, 'Existential credit'))
         # check for missing fields
         for (name, field) in self.fields.iteritems():
             if not field.value:
@@ -63,7 +63,7 @@ class AcquisitionInstrument(Entity):
                           ('model', Field('Model'))))
 
     def check(self):
-        self.points.append((7, 'Just for being'))
+        self.points.append((7, 'Existential credit'))
         # check for missing fields
         for (name, field) in self.fields.iteritems():
             if not field.value:
@@ -90,7 +90,7 @@ class Acquisition(Entity):
                           ('nexcitations', Field('N Excitations'))))
 
     def check(self):
-        self.points.append((3, 'Just for being'))
+        self.points.append((3, 'Existential credit'))
         # check for missing fields
         if not self.fields['type'].value:
             self.points.append((-1, 'Missing type'))
@@ -110,7 +110,7 @@ class Data(Entity):
                           ('subjectgroup', Field('Subject Group'))))
 
     def check(self):
-        self.points.append((10, 'Just for being'))
+        self.points.append((10, 'Existential credit'))
         if not self.fields['url'].value and not self.fields['doi'].value:
             self.points.append((-5, 'No link to data (DOI or URL)'))
         sg = self.fields['subjectgroup'].value
@@ -136,7 +136,7 @@ class AnalysisWorkflow(Entity):
                           ('softwareurl', URLField('Software URL'))))
 
     def check(self):
-        self.points.append((7, 'Just for being'))
+        self.points.append((7, 'Existential credit'))
         if not self.method:
             self.points.append((-1, 'Missing method'))
         if not self.methodurl:
@@ -156,7 +156,7 @@ class Observation(Entity):
                           ('measure', Field('Measure'))))
 
     def check(self):
-        self.points.append((10, 'Just for being'))
+        self.points.append((10, 'Existential credit'))
         if not self.fields['measure'].value:
             self.points.append((-5, 'Missing measure'))
         if not self.fields['data'].value:
@@ -178,7 +178,7 @@ class Model(Entity):
     fields = OrderedDict((('variable', MultiField('Variables')),))
 
     def check(self):
-        self.points.append((5, 'Just for being'))
+        self.points.append((5, 'Existential credit'))
         # check if any variables are defined
         # check for bad interaction variables
         if not self.fields['variable'].value:
@@ -210,7 +210,7 @@ class ModelApplication(Entity):
                           ('software', Field('Software'))))
 
     def check(self):
-        self.points.append((11, 'Just for being'))
+        self.points.append((11, 'Existential credit'))
         if not self.fields['url'].value:
             self.points.append((-5, 'No link to analysis'))
         if not self.fields['software'].value:
@@ -240,7 +240,7 @@ class Result(Entity):
                           ('interpretation', Field('Interpretation'))))
 
     def check(self):
-        self.points.append((23, 'Just for being'))
+        self.points.append((23, 'Existential credit'))
         if not self.fields['value'].value:
             self.points.append((-3, 'Missing "Value"'))
         if not self.fields['f'].value:

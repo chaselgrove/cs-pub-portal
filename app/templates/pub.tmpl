@@ -10,6 +10,7 @@
                 {% for e in entities.itervalues() %}
                     {{ entity(e) }}
                 {% endfor %}
+                <div class="clear">&nbsp;</div>
             </div>
         {% endif %}
     </div>
@@ -17,30 +18,37 @@
 
 {% macro entity(ent) %}
     <div class="entity">
-        {% set (score, max_score) = ent.score() %}
-        <div class="ent_id">{{ ent.id }} ({{ score }}/{{ max_score }})</div>
-        {% for error in ent.errors %}
-            <div class="error">{{ error.render() }}</div>
-        {% endfor %}
+        <div class="header">
+            {% set (score, max_score) = ent.score() %}
+            <div class="id">{{ ent.id }}</div>
+            <div class="score">{{ score }}/{{ max_score }}</div>
+        </div>
+        <div class="clear">&nbsp;</div>
+         {% for error in ent.errors %}
+             <div class="error">{{ error.render() }}</div>
+         {% endfor %}
         <ul class="fields">
             {% for field in ent.fields.itervalues() %}
                 <li>{{ field.display_name }}: {{ field.render_value() }} </li>
             {% endfor %}
         </ul>
-        <div class="points">
-            Points
-            {% for (value, note) in ent.points %}
-                <br/>
-                {{ value }} {{ note }}
-            {% endfor %}
-        </div>
         <div class="annot_links">
-            Annotations
+            Defined in:
+            <ul>
             {% for annot_link in ent.annotation_links() %}
-                <br/>
-                {{ annot_link }}
+                <li>{{ annot_link }}</li>
             {% endfor %}
+            </ul>
         </div>
+        <ul class="points">
+        {% for (value, note) in ent.points %}
+            {% if value > 0 %}
+                <li><span class="value">+{{ value }}</span> <span class="note">{{ note }}</span></li>
+            {% else %}
+                <li><span class="value">{{ value }}</span> <span class="note">{{ note }}</span></li>
+            {% endif %}
+        {% endfor %}
+        </ul>
     </div>
 {% endmacro %}
 

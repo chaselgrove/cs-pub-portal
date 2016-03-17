@@ -6,23 +6,84 @@ body {
     padding: 0;
 }
 
+h2 {
+    background-color: #ccc;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
 div {
-    border: 1px solid #000;
+/*    border: 1px solid #000;*/
 }
 
 .error {
     background-color: #f00;
 }
 
-.warning{
-    background-color: #ff0;
+div.clear {
+    clear: both;
+    height: 1px;
 }
 
 .entity {
-    background-color: #0f0;
+    border: 2px solid #bbb;
+    float: left;
     margin: 10px 0 10px 10px;
-    min-height: 250px;
+    padding: 5px;
     width: 300px;
+}
+
+.entity .id {
+    float: left;
+    font-size: larger;
+}
+
+.entity .score {
+    float: right;
+}
+
+.entity .error_container {
+    clear: both;
+}
+
+.entity .error {
+    margin-top: 10px;
+}
+
+.entity .fields {
+}
+
+.entity .fields li {
+    margin: 0;
+}
+
+.entity .annot_links {
+    background-color: #ddd;
+    margin-bottom: 1em;
+}
+
+.entity .annot_links ul {
+    padding-left: 1em;
+    margin-bottom: 0;
+}
+
+.entity .points {
+    background-color: #ddd;
+    margin: 0;
+    padding: 0;
+}
+
+.entity .points .value {
+    float: left;
+    text-align: right;
+    width: 2em;
+}
+
+.entity .points .note {
+    padding-left: 0.5em;
 }
 
 /* eof */
