@@ -77,6 +77,6 @@ class MultiField(BaseField):
     def render_value(self):
         if self.value is None:
             return ''
-        return '%d %s' % (len(self.value), ', '.join(self.value))
+        return ', '.join(self.value)
 
 # eof
