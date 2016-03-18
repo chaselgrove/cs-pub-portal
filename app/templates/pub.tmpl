@@ -68,26 +68,26 @@
 {% block body %}
 
 {% if error %}
-    <p class="error">{{ error }}</p>
+    <p><span class="error">{{ error }}</span></p>
 {% else %}
 
-    <div id="pub_link">
-        PMID <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid }}">{{ pub.pmid }}</a>
-        <br/>
-        Markup via PMC ID <a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>.
-    </div>
-
     <div id="summary">
-        {{ pub.title }}
-        <br/>
+        <p>CANDI Share publication portal report for "{{ pub.title }}".</p>
+
+        <p>PubMed ID <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid }}">{{ pub.pmid }}</a></p>
+
+        <p>Markup via PubMed Central (<a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>).</p>
+
         {% if pub.errors %}
             <h2>Errors</h2>
             {% for error in pub.errors %}
                 <p>{{ error.render() }}</p>
             {% endfor %}
         {% endif %}
+
         {% set (score, max_score) = pub.score() %}
-        Score: {{ score }}/{{ max_score }}
+        <p>Score: {{ score }}/{{ max_score }}</p>
+
     </div>
 
     {{ entity_group('Subject Groups', pub.entities['SubjectGroup']) }}

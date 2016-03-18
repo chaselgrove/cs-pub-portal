@@ -3,11 +3,7 @@ body {
     border: 0;
     font-family: "Helvetica", sans-serif;
     margin: 0;
-    padding: 0;
-}
-
-h2 {
-    background-color: #ccc;
+    padding: 10px;
 }
 
 ul {
@@ -15,8 +11,29 @@ ul {
     padding: 0;
 }
 
+#header a {
+    float: left;
+}
+
+#header form {
+    float: right;
+}
+
+div#body {
+    padding-top: 10px;
+    clear: both;
+}
+
+h2 {
+    background-color: #ccc;
+}
+
 div {
 /*    border: 1px solid #000;*/
+}
+
+#body > .error {
+    width: auto;
 }
 
 .error {

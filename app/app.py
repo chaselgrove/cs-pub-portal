@@ -17,9 +17,9 @@ def publication(pmid):
     try:
         publication = pub.Publication(pmid)
     except ValueError:
-        error = 'Bad PMID'
+        error = 'Bad PMID "%s"' % pmid
     except pub.PublicationNotFoundError:
-        error = 'Publication not found'
+        error = 'Publication %s not found' % pmid
     return flask.render_template('pub.tmpl', 
                                  root=flask.request.script_root, 
                                  error=error, 
