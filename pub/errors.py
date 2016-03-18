@@ -30,7 +30,7 @@ class UnknownFieldError(MarkupError):
     """unknown field in entity definition"""
 
     def __init__(self, name, annot_id):
-        MarkupError.__init__(self, 'Unknown field %s' % name, annot_id)
+        MarkupError.__init__(self, 'Unknown field "%s"' % name, annot_id)
         return
 
 class MissingOrUnknownTypeError(MarkupError):
