@@ -49,6 +49,17 @@
             {% endif %}
         {% endfor %}
         </ul>
+        <div class="clear">&nbsp;</div>
+        {% if ent.links %}
+            <div class="pub_links">
+                Find other studies:
+                <ul>
+                    {% for (text, url) in ent.links %}
+                        <li><a href="{{ url }}">{{ text }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
     </div>
 {% endmacro %}
 

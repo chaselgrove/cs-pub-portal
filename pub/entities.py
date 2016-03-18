@@ -15,6 +15,7 @@ class Entity:
         self.annotation_ids = set()
         self.errors = []
         self.points = []
+        self.links = []
         self.fields = OrderedDict()
         for (key, cls, display_name) in self.field_defs:
             self.fields[key] = cls(display_name)
@@ -24,6 +25,16 @@ class Entity:
                 self.fields[name].set(value)
             else:
                 self.errors.append(UnknownFieldError(name, annotation_id))
+        return
+
+    def __getitem__(self, key):
+        return self.fields[key].value
+
+    def set_related(self):
+        """set related entities"""
+        return
+
+    def add_links(self):
         return
 
     def score(self):
@@ -57,6 +68,11 @@ class SubjectGroup(Entity):
                 self.points.append((-1, 'Missing %s' % name))
         return
 
+    def add_links(self):
+        if self['diagnosis']:
+            self.links.append(('with %s subjects' % self['diagnosis'], '#'))
+        return
+
 class AcquisitionInstrument(Entity):
 
     field_defs = (('type', Field, 'Type'), 
@@ -76,6 +92,18 @@ class AcquisitionInstrument(Entity):
                     self.points.append((-1, 'Missing %s' % name))
         return
 
+    def add_links(self):
+        if self['location']:
+            self.links.append(('run at %s' % self['location'], '#'))
+        scanner_parts = []
+        for key in ('field', 'manufacturer', 'model'):
+            if self[key]:
+                scanner_parts.append(self[key])
+        if scanner_parts:
+            text = 'using a %s scanner' % ' '.join(scanner_parts)
+            self.links.append((text, '#'))
+        return
+
 class Acquisition(Entity):
 
     field_defs = (('type', Field, 'Type'), 
@@ -91,6 +119,15 @@ class Acquisition(Entity):
                   ('matrix', Field, 'Matrix'), 
                   ('nexcitations', Field, 'N Excitations'))
 
+    def set_related(self):
+        ai_id = self['acquisitioninstrument']
+        if ai_id:
+            ai = self.pub.entities['AcquisitionInstrument'][ai_id]
+            self.acquisition_instrument = ai
+        else:
+            self.acquisition_instrument = None
+        return
+
     def check(self):
         self.points.append((3, 'Existential credit'))
         # check for missing fields
@@ -104,12 +141,30 @@ class Acquisition(Entity):
             self.errors.append(LinkError(msg))
         return
 
+    def add_links(self):
+        if self['type']:
+            self.links.append(('using %s images' % self['type'], '#'))
+        return
+
 class Data(Entity):
 
     field_defs = (('url', URLField, 'URL'), 
                   ('doi', DOIField, 'DOI'), 
                   ('acquisition', Field, 'Acquisition'), 
                   ('subjectgroup', Field, 'Subject Group'))
+
+    def set_related(self):
+        a_id = self['acquisition']
+        if a_id:
+            self.acquisition = self.pub.entities['Acquisition'][a_id]
+        else:
+            self.acquisition = None
+        sg_id = self['subjectgroup']
+        if sg_id:
+            self.subject_group = self.pub.entities['SubjectGroup'][sg_id]
+        else:
+            self.subject_group = None
+        return
 
     def check(self):
         self.points.append((10, 'Existential credit'))
@@ -151,11 +206,31 @@ class AnalysisWorkflow(Entity):
                 self.points.append((-2, 'Missing software link'))
         return
 
+    def add_links(self):
+        if self['method']:
+            self.links.append(('using %s' % self['method'], '#'))
+        if self['software']:
+            self.links.append(('using %s' % self['software'], '#'))
+        return
+
 class Observation(Entity):
 
     field_defs = (('data', MultiField, 'Data'), 
                   ('analysisworkflow', Field, 'Analysis Workflow'), 
                   ('measure', Field, 'Measure'))
+
+    def set_related(self):
+        aw_id = self['analysisworkflow']
+        if aw_id:
+            aw = self.pub.entities['AnalysisWorkflow'][aw_id]
+            self.analysis_workflow = aw
+        else:
+            self.analysis_workflow = None
+        self.data = []
+        if self['data']:
+            for d_id in self['data']:
+                self.data.append(self.pub.entities['Data'][d_id])
+        return
 
     def check(self):
         self.points.append((10, 'Existential credit'))
@@ -173,6 +248,11 @@ class Observation(Entity):
         elif aw not in self.pub.entities['AnalysisWorkflow']:
             err = LinkError('Undefined analysis workflow "%s"' % aw)
             self.errors.append(err)
+        return
+
+    def add_links(self):
+        if self['measure']:
+            self.links.append(('reporting %s' % self['measure'], '#'))
         return
 
 class Model(Entity):
@@ -207,12 +287,29 @@ class Model(Entity):
                 self.points.append((-2, msg))
         return
 
+    def add_links(self):
+        if self['type']:
+            self.links.append(('using a %s model' % self['type'], '#'))
+        return
+
 class ModelApplication(Entity):
 
     field_defs = (('observation', MultiField, 'Observations'), 
                   ('model', Field, 'Model'), 
                   ('url', URLField, 'URL'), 
                   ('software', Field, 'Software'))
+
+    def set_related(self):
+        m_id = self['model']
+        if m_id:
+            self.model = self.pub.entities['Model'][m_id]
+        else:
+            self.model = None
+        self.observations = []
+        if self['observation']:
+            for o_id in self['observation']:
+                self.observations.append(self.pub.entities['Observation'][o_id])
+        return
 
     def check(self):
         self.points.append((11, 'Existential credit'))
@@ -243,6 +340,15 @@ class Result(Entity):
                   ('f', Field, 'f'), 
                   ('p', Field, 'p'), 
                   ('interpretation', Field, 'Interpretation'))
+
+    def set_related(self):
+        ma_id = self['modelapplication']
+        if ma_id:
+            ma = self.pub.entities['ModelApplication'][ma_id]
+            self.model_application = ma
+        else:
+            self.model_application = None
+        return
 
     def check(self):
         self.points.append((23, 'Existential credit'))
@@ -286,6 +392,20 @@ class Result(Entity):
                     fmt = 'Variables not defined in the model: %s'
                     msg = fmt % ', '.join(sorted(bad_vars))
                     self.points.append((-2, msg))
+        return
+
+    def add_links(self):
+        if self['value']:
+            self.links.append(('reporting on %s' % self['value'], '#'))
+            diagnoses = []
+            if self.model_application:
+                for o in self.model_application.observations:
+                    for d in o.data:
+                        if d.subject_group and d.subject_group['diagnosis']:
+                            diagnoses.append(d.subject_group['diagnosis'])
+            for diagnosis in diagnoses:
+                text = 'reporting on %s in %s' % (self['value'], diagnosis)
+                self.links.append((text, '#'))
         return
 
 # entities[markup entity type] = entity class

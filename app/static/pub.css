@@ -70,6 +70,10 @@ div.clear {
     margin-bottom: 0;
 }
 
+.entity .annot_links li {
+    margin-bottom: 0.5em;
+}
+
 .entity .points {
     background-color: #ddd;
     margin: 0;
@@ -84,6 +88,20 @@ div.clear {
 
 .entity .points .note {
     padding-left: 0.5em;
+}
+
+.entity .pub_links {
+    background-color: #ddd;
+    margin-top: 1em;
+}
+
+.entity .pub_links ul {
+    padding-left: 1em;
+    margin-bottom: 0;
+}
+
+.entity .pub_links li {
+    margin-bottom: 0.5em;
 }
 
 /* eof */
