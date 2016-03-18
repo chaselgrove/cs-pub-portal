@@ -177,12 +177,15 @@ class Observation(Entity):
 
 class Model(Entity):
 
-    field_defs = (('variable', MultiField, 'Variables'),)
+    field_defs = (('type', Field, 'Type'), 
+                  ('variable', MultiField, 'Variables'))
 
     def check(self):
-        self.points.append((5, 'Existential credit'))
+        self.points.append((10, 'Existential credit'))
         # check if any variables are defined
         # check for bad interaction variables
+        if not self.fields['type'].value:
+            self.points.append((-4, 'No model type defined'))
         if not self.fields['variable'].value:
             self.points.append((-4, 'No variables defined'))
         else:
