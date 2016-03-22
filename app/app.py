@@ -5,8 +5,9 @@ app = flask.Flask(__name__, static_url_path='')
 
 @app.route('/')
 def index():
-    pmid = flask.request.args.get('pmid').strip()
+    pmid = flask.request.args.get('pmid')
     if pmid:
+        pmid = pmid.strip()
         return flask.redirect(flask.url_for('publication', pmid=pmid))
     return flask.render_template('index.tmpl', root=flask.request.script_root)
 
