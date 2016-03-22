@@ -41,6 +41,13 @@ class Publication:
                 max += emax
         return (s, max)
 
+    def stars(self):
+        (s, max) = self.score()
+        if max == 0:
+            return 0
+        f = float(s)/max;
+        return int((f+0.1) / 0.2)
+
     def _read_pubmed(self):
 
         """get the pubmed entry
