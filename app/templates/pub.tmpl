@@ -72,21 +72,55 @@
 {% else %}
 
     <div id="summary">
-        <p>CANDI Share publication portal report for "{{ pub.title }}".</p>
-
-        <p>PubMed ID <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid }}">{{ pub.pmid }}</a></p>
-
-        <p>Markup via PubMed Central (<a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>).</p>
-
-        {% if pub.errors %}
-            <h2>Errors</h2>
-            {% for error in pub.errors %}
-                <p>{{ error.render() }}</p>
-            {% endfor %}
-        {% endif %}
 
         {% set (score, max_score) = pub.score() %}
-        <p>Score: {{ score }}/{{ max_score }}</p>
+        <div id="score">
+
+            <div id="score_ex1" class="score_ex">
+                The second value tells how much information the paper intends to convey.  It's a "total possible" score that It increases with each entity defined.
+            </div>
+
+            <div id="score_values">
+                <span class="center">{{ score }}/{{ max_score }}</span>
+            </div>
+
+            <div id="score_ex2" class="score_ex">
+                The first value tells how well the paper describes the information it sets out to present.  The closer this is to the second value, the more possible it is to rerun the study.
+            </div>
+
+            <div id="score_stars">
+                <span class="center">
+                    {% set stars = pub.stars() %}
+                    {% set blanks = 5 - stars %}
+                    {% for i in range(stars) %}
+                        <img src="{{ root }}/star.png" />
+                    {% endfor %}
+                    {% for i in range(blanks) %}
+                        <img src="{{ root }}/unstar.png" />
+                    {% endfor %}
+                </span>
+            </div>
+
+        </div>
+
+        <div id="basics">
+
+            <p>CANDI Share publication portal report for "{{ pub.title }}"</p>
+
+            <p>PubMed ID <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub.pmid }}">{{ pub.pmid }}</a>.</p>
+
+            <p>Markup via PubMed Central (<a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>).</p>
+
+        </div>
+
+        {% if pub.errors %}
+            <div id="errors">
+                <h2>Errors</h2>
+                {% for error in pub.errors %}
+                    <p>{{ error.render() }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
 
     </div>
 

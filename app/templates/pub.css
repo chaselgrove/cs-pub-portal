@@ -11,14 +11,6 @@ ul {
     padding: 0;
 }
 
-#header a {
-    float: left;
-}
-
-#header form {
-    float: right;
-}
-
 div#body {
     padding-top: 10px;
     clear: both;
@@ -26,10 +18,6 @@ div#body {
 
 h2 {
     background-color: #ccc;
-}
-
-div {
-/*    border: 1px solid #000;*/
 }
 
 #body > .error {
@@ -43,6 +31,76 @@ div {
 div.clear {
     clear: both;
     height: 1px;
+}
+
+#header a {
+    float: left;
+}
+
+#header form {
+    float: right;
+}
+
+#summary #basics {
+    font-size: larger;
+    margin-right: 400px;
+}
+
+#summary #score {
+    float: right;
+    width: 350px;
+}
+
+#summary #score #score_ex1 {
+    background: url("{{ root }}/ex1_margin_bottom.png") bottom no-repeat #eee;
+    margin-left: 100px;
+    margin-bottom: -2px;
+    padding: .5em;
+}
+
+#summary #score #score_ex2 {
+    background: url("{{ root }}/ex2_margin_top.png") top no-repeat #eee;
+    margin-right: 100px;
+    margin-top: -2px;
+    padding: .5em;
+    text-align: right;
+}
+
+#summary #score .score_ex {
+    font-size: smaller;
+}
+
+#summary #score #score_values {
+    background-image: url("{{ root }}/values_background.png");
+    font-size: 200%;
+    height: 76px;
+    line-height: 76px;
+    margin: auto;
+    text-align: center;
+    width: 152px;
+}
+
+#summary #score span.center {
+    vertical-align: middle;
+}
+
+#summary #score #score_stars {
+    height: 30px;
+    line-height: 30px;
+    padding-top: 10px;
+    text-align: center;
+}
+
+#summary #errors {
+    clear: both;
+}
+
+.entity_group {
+    clear: both;
+}
+
+#summary + .entity_group {
+    padding-top: 1em;
 }
 
 .entity {

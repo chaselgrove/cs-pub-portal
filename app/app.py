@@ -3,6 +3,11 @@ import pub
 
 app = flask.Flask(__name__, static_url_path='')
 
+@app.route('/pub.css')
+def css():
+    data = flask.render_template('pub.css', root=flask.request.script_root)
+    return flask.Response(data, mimetype='text/css')
+
 @app.route('/')
 def index():
     pmid = flask.request.args.get('pmid')
