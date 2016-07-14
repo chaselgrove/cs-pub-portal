@@ -37,7 +37,7 @@ class MissingOrUnknownTypeError(MarkupError):
 
     """missing or unknown entity type"""
 
-    def __init__(self, name, annot_id):
+    def __init__(self, annot_id):
         MarkupError.__init__(self, 'Missing or unknown entity type' , annot_id)
         return
 
