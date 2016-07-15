@@ -10,12 +10,13 @@ class PublicationNotFoundError(PubError):
 
     """publication not found"""
 
-    def __init__(self, pmid):
-        self.pmid = pmid
+    def __init__(self, id_type, id):
+        self.id_type = id_type
+        self.id = id
         return
 
     def __str__(self):
-        return 'no title or PMC ID found for PMID %s' % self.pmid
+        return '%s %s not found' % (self.id_type, self.id)
 
 class HypothesisError(PubError):
 

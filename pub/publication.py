@@ -7,6 +7,7 @@ from .entities import *
 from .exceptions import *
 
 pmid_re = re.compile('^\d+$')
+pmc_id_re = re.compile('^(pmc)?\d+$', re.IGNORECASE)
 
 class Publication:
 
@@ -18,6 +19,32 @@ class Publication:
         obj.pmid = pmid
         obj.title = None
         obj.pmc_id = None
+        obj.errors = []
+        obj.entities = {}
+        for et in entities:
+            obj.entities[et] = {}
+        obj._read_pubmed()
+        obj._read_annotations()
+        for ed in obj.entities.itervalues():
+            for ent in ed.itervalues():
+                ent.set_related()
+        for ed in obj.entities.itervalues():
+            for ent in ed.itervalues():
+                ent.check()
+                ent.add_links()
+        return obj
+
+    @classmethod
+    def get_by_pmc_id(cls, pmc_id):
+        obj = cls()
+        if not pmc_id_re.search(pmc_id):
+            raise ValueError('bad PMC ID')
+        if pmc_id.upper().startswith('PMC'):
+            obj.pmc_id = pmc_id.upper()
+        else:
+            obj.pmc_id = 'PMC%s' % pmc_id
+        obj.pmid = None
+        obj.title = None
         obj.errors = []
         obj.entities = {}
         for et in entities:
@@ -58,12 +85,16 @@ class Publication:
         """
 
         conn = httplib.HTTPSConnection('www.ncbi.nlm.nih.gov')
-        params = {'term': self.pmid, 'report': 'medline', 'format': 'text'}
+        params = {'report': 'medline', 'format': 'text'}
+        if self.pmid:
+            params['term'] = self.pmid
+        else:
+            params['term'] = self.pmc_id
         url = '/pubmed/?%s' % urllib.urlencode(params)
         conn.request('GET', url)
         response = conn.getresponse()
         if response.status != 200:
-            msg = 'PubMed Central response status %d' % response.status
+            msg = 'PubMed response status %d' % response.status
             raise PubMedError(msg)
         data = response.read()
         conn.close()
@@ -75,8 +106,10 @@ class Publication:
                 if value:
                     if field == 'TI':
                         self.title = value
-                    if field == 'PMC':
+                    if not self.pmc_id and field == 'PMC':
                         self.pmc_id = value
+                    if not self.pmid and field == 'PMID':
+                        self.pmid = value
                 (field, value) = [ el.strip() for el in line.split('-', 1) ]
             elif field:
                 value = '%s %s' % (value, line.strip())
@@ -85,8 +118,11 @@ class Publication:
                 self.title = value
             if field == 'PMC':
                 self.pmc_id = value
-        if not self.title or not self.pmc_id:
-            raise PublicationNotFoundError(self.pmid)
+        if not self.pmid or not self.title or not self.pmc_id:
+            if self.pmid:
+                raise PublicationNotFoundError('PMID', self.pmid)
+            else:
+                raise PublicationNotFoundError('PMC ID', self.pmc_id)
         return
 
     def _read_annotations(self):
