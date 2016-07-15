@@ -10,26 +10,28 @@ pmid_re = re.compile('^\d+$')
 
 class Publication:
 
-    def __init__(self, pmid):
+    @classmethod
+    def get_by_pmid(cls, pmid):
+        obj = cls()
         if not pmid_re.search(pmid):
             raise ValueError('bad PMID')
-        self.pmid = pmid
-        self.title = None
-        self.pmc_id = None
-        self.errors = []
-        self.entities = {}
+        obj.pmid = pmid
+        obj.title = None
+        obj.pmc_id = None
+        obj.errors = []
+        obj.entities = {}
         for et in entities:
-            self.entities[et] = {}
-        self._read_pubmed()
-        self._read_annotations()
-        for ed in self.entities.itervalues():
+            obj.entities[et] = {}
+        obj._read_pubmed()
+        obj._read_annotations()
+        for ed in obj.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
-        for ed in self.entities.itervalues():
+        for ed in obj.entities.itervalues():
             for ent in ed.itervalues():
                 ent.check()
                 ent.add_links()
-        return
+        return obj
 
     def score(self):
         s = 0

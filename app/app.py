@@ -21,7 +21,7 @@ def publication(pmid):
     error = None
     publication = None
     try:
-        publication = pub.Publication(pmid)
+        publication = pub.Publication.get_by_pmid(pmid)
     except ValueError:
         error = 'Bad PMID "%s"' % pmid
     except pub.PublicationNotFoundError:
