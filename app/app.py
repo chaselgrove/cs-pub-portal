@@ -22,10 +22,16 @@ def publication(pmid):
     publication = None
     try:
         publication = pub.Publication.get_by_pmid(pmid)
-    except ValueError:
-        error = 'Bad PMID "%s"' % pmid
-    except pub.PublicationNotFoundError:
-        error = 'Publication %s not found' % pmid
+    except:
+        try:
+            publication = pub.Publication.get_by_pmc_id(pmid)
+        except ValueError:
+            error = 'Bad ID "%s"' % pmid
+        except pub.PublicationNotFoundError:
+            error = 'Publication %s not found' % pmid
+        else:
+            url = flask.url_for('publication', pmid=publication.pmid)
+            return flask.redirect(url)
     return flask.render_template('pub.tmpl', 
                                  root=flask.request.script_root, 
                                  error=error, 
