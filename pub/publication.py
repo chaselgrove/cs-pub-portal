@@ -5,6 +5,8 @@ import json
 
 from .entities import *
 from .exceptions import *
+from .cache import Cache
+from .debug import debug
 
 pmid_re = re.compile('^\d+$')
 pmc_id_re = re.compile('^(pmc)?\d+$', re.IGNORECASE)
@@ -77,28 +79,41 @@ class Publication:
         f = float(s)/max;
         return int((f+0.1) / 0.2)
 
-    def _read_pubmed(self):
+    def _get_pubmed_data(self, term):
+        """return the cached pubmed data (if we have it); otherwise get it 
+        from pubmed and put it in the cache
+        """
+        key = 'pubmed:%s' % term
+        with Cache() as cache:
+            try:
+                data = cache[key]
+                debug('got %s from cache' % key)
+                return data
+            except KeyError:
+                debug('%s not in cache' % key)
+            conn = httplib.HTTPSConnection('www.ncbi.nlm.nih.gov')
+            params = {'report': 'medline', 'format': 'text', 'term': term}
+            url = '/pubmed/?%s' % urllib.urlencode(params)
+            conn.request('GET', url)
+            response = conn.getresponse()
+            if response.status != 200:
+                msg = 'PubMed response status %d' % response.status
+                raise PubMedError(msg)
+            data = response.read()
+            conn.close()
+            cache[key] = data
+        return data
 
+    def _read_pubmed(self):
         """get the pubmed entry
 
         raises PublicationNotFoundError if the pubmed record is not found
         """
-
-        conn = httplib.HTTPSConnection('www.ncbi.nlm.nih.gov')
-        params = {'report': 'medline', 'format': 'text'}
         if self.pmid:
-            params['term'] = self.pmid
+            term = self.pmid
         else:
-            params['term'] = self.pmc_id
-        url = '/pubmed/?%s' % urllib.urlencode(params)
-        conn.request('GET', url)
-        response = conn.getresponse()
-        if response.status != 200:
-            msg = 'PubMed response status %d' % response.status
-            raise PubMedError(msg)
-        data = response.read()
-        conn.close()
-
+            term = self.pmc_id
+        data = self._get_pubmed_data(term)
         field = None
         value = None
         for line in data.split('\n'):
