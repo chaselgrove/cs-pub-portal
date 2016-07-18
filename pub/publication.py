@@ -14,7 +14,7 @@ pmc_id_re = re.compile('^(pmc)?\d+$', re.IGNORECASE)
 class Publication:
 
     @classmethod
-    def get_by_pmid(cls, pmid):
+    def get_by_pmid(cls, pmid, refresh_cache=False):
         obj = cls()
         if not pmid_re.search(pmid):
             raise ValueError('bad PMID')
@@ -26,7 +26,7 @@ class Publication:
         for et in entities:
             obj.entities[et] = {}
         obj._read_pubmed()
-        obj._read_annotations()
+        obj._read_annotations(refresh_cache)
         for ed in obj.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
@@ -37,7 +37,7 @@ class Publication:
         return obj
 
     @classmethod
-    def get_by_pmc_id(cls, pmc_id):
+    def get_by_pmc_id(cls, pmc_id, refresh_cache=False):
         obj = cls()
         if not pmc_id_re.search(pmc_id):
             raise ValueError('bad PMC ID')
@@ -52,7 +52,7 @@ class Publication:
         for et in entities:
             obj.entities[et] = {}
         obj._read_pubmed()
-        obj._read_annotations()
+        obj._read_annotations(refresh_cache)
         for ed in obj.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
@@ -140,7 +140,37 @@ class Publication:
                 raise PublicationNotFoundError('PMC ID', self.pmc_id)
         return
 
-    def _read_annotations(self):
+    def _get_hypothesis_data(self, url, refresh_cache):
+        """return the cached hypothesis data (if we have it); otherwise get it 
+        from hypothesis and put it in the cache
+
+        setting refresh_cache to True will skip the cache check and force 
+        getting data from hypothesis
+        """
+        key = 'hypothesisurl:%s' % url
+        with Cache() as cache:
+            if refresh_cache:
+                debug('skipping cache check on %s' % key)
+            else:
+                try:
+                    data = cache[key]
+                    debug('got %s from cache' % key)
+                    return data
+                except KeyError:
+                    debug('%s not in cache' % key)
+            conn = httplib.HTTPSConnection('hypothes.is')
+            url = '/api/search?%s' % urllib.urlencode({'uri': url})
+            conn.request('GET', url, '', {'Accept': 'application/json'})
+            response = conn.getresponse()
+            if response.status != 200:
+                msg = 'hypothes.is response status %d' % response.status
+                raise HypothesisError(msg)
+            data = response.read()
+            conn.close()
+            cache[key] = data
+        return data
+
+    def _read_annotations(self, refresh_cache):
 
         """reads annotations from a PubMed Central manuscript
 
@@ -164,17 +194,8 @@ class Publication:
 
         url_fmt = 'http://www.ncbi.nlm.nih.gov/pmc/articles/%s'
         url = url_fmt % self.pmc_id
-
-        conn = httplib.HTTPSConnection('hypothes.is')
-        url = '/api/search?%s' % urllib.urlencode({'uri': url})
-        conn.request('GET', url, '', {'Accept': 'application/json'})
-        response = conn.getresponse()
-        if response.status != 200:
-            msg = 'hypothes.is response status %d' % response.status
-            raise HypothesisError(msg)
-        data = response.read()
+        data = self._get_hypothesis_data(url, refresh_cache)
         obj = json.loads(data)
-        conn.close()
 
         # first pass: through the annotations to generate a dictionary d0 
         # where d0[entity type] = list of (annotation ID, list of lines) tuples
