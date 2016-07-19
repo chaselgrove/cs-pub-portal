@@ -30,9 +30,12 @@ def publication(id):
     id = id.encode('ascii', 'replace')
     error = None
     publication = None
-    try:
-        publication = pub.Publication.get_by_pmid(id)
-    except:
+    if pub.publication.pmid_re.search(id):
+        try:
+            publication = pub.Publication.get_by_pmid(id)
+        except pub.PublicationNotFoundError:
+            pass
+    if not publication:
         try:
             publication = pub.Publication.get_by_pmc_id(id)
         except ValueError:
