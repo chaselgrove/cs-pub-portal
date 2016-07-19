@@ -64,7 +64,7 @@ class Cache:
             timestamp = datetime.datetime.utcfromtimestamp(float(t))
         except:
             # no timestamp or corrupt timestamp
-            timestamp = None
+            raise KeyError(key)
         return (val, timestamp)
 
     def __setitem__(self, key, value):
