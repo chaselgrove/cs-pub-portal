@@ -16,29 +16,29 @@ def css():
 @app.route('/')
 def index():
     set_env()
-    pmid = flask.request.args.get('pmid')
-    if pmid:
-        pmid = pmid.strip().encode('ascii', 'replace')
-        return flask.redirect(flask.url_for('publication', pmid=pmid))
+    id = flask.request.args.get('id')
+    if id:
+        id = id.strip().encode('ascii', 'replace')
+        return flask.redirect(flask.url_for('publication', id=id))
     return flask.render_template('index.tmpl', root=flask.request.script_root)
 
-@app.route('/pm/<pmid>')
-def publication(pmid):
+@app.route('/pm/<id>')
+def publication(id):
     set_env()
-    pmid = pmid.encode('ascii', 'replace')
+    id = id.encode('ascii', 'replace')
     error = None
     publication = None
     try:
-        publication = pub.Publication.get_by_pmid(pmid)
+        publication = pub.Publication.get_by_pmid(id)
     except:
         try:
-            publication = pub.Publication.get_by_pmc_id(pmid)
+            publication = pub.Publication.get_by_pmc_id(id)
         except ValueError:
-            error = 'Bad ID "%s"' % pmid
+            error = 'Bad ID "%s"' % id
         except pub.PublicationNotFoundError:
-            error = 'Publication %s not found' % pmid
+            error = 'Publication %s not found' % id
         else:
-            url = flask.url_for('publication', pmid=publication.pmid)
+            url = flask.url_for('publication', id=publication.pmid)
             return flask.redirect(url)
     return flask.render_template('pub.tmpl', 
                                  root=flask.request.script_root, 
