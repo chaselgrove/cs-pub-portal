@@ -12,4 +12,18 @@ This is the CANDI Share Publication Portal.
     <p class="error">{{ error }}</p>
 {% endif %}
 
+{% if known_publications %}
+
+    <p>
+    Known publications:
+    </p>
+
+    <ul>
+        {% for pmid in known_publications|sort %}
+            <li><a href="{{ root }}/pm/{{ pmid }}">{{ pmid }}</a>: {{ known_publications[pmid] }}</li>
+        {% endfor %}
+    </ul>
+
+{% endif %}
+
 {% endblock %}

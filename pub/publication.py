@@ -35,6 +35,11 @@ class Publication:
             for ent in ed.itervalues():
                 ent.check()
                 ent.add_links()
+        known_pubs = Publication.get_known()
+        if obj.pmid not in known_pubs:
+            known_pubs[obj.pmid] = obj.title
+            with Cache() as cache:
+                cache['publications'] = json.dumps(known_pubs)
         return obj
 
     @classmethod
@@ -61,7 +66,22 @@ class Publication:
             for ent in ed.itervalues():
                 ent.check()
                 ent.add_links()
+        known_pubs = Publication.get_known()
+        if obj.pmid not in known_pubs:
+            known_pubs[obj.pmid] = obj.title
+            with Cache() as cache:
+                cache['publications'] = json.dumps(known_pubs)
         return obj
+
+    @classmethod
+    def get_known(cls):
+        with Cache() as cache:
+            try:
+                (data, timestamp) = cache['publications']
+                rv = json.loads(data)
+            except KeyError:
+                rv = {}
+        return rv
 
     def score(self):
         s = 0

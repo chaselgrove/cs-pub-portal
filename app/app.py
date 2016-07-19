@@ -20,7 +20,9 @@ def index():
     if id:
         id = id.strip().encode('ascii', 'replace')
         return flask.redirect(flask.url_for('publication', id=id))
-    return flask.render_template('index.tmpl', root=flask.request.script_root)
+    return flask.render_template('index.tmpl', 
+                                 root=flask.request.script_root, 
+                                 known_publications=pub.Publication.get_known())
 
 @app.route('/pm/<id>')
 def publication(id):
