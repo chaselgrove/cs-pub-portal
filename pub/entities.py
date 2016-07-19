@@ -131,9 +131,9 @@ class Acquisition(Entity):
     def check(self):
         self.points.append((3, 'Existential credit'))
         # check for missing fields
-        if not self.fields['type'].value:
+        if not self['type']:
             self.points.append((-1, 'Missing type'))
-        ai = self.fields['acquisitioninstrument'].value
+        ai = self['acquisitioninstrument']
         if not ai:
             self.points.append((-1, 'Missing acquisition instrument'))
         elif ai not in self.pub.entities['AcquisitionInstrument']:
@@ -168,15 +168,15 @@ class Data(Entity):
 
     def check(self):
         self.points.append((10, 'Existential credit'))
-        if not self.fields['url'].value and not self.fields['doi'].value:
+        if not self['url'] and not self['doi']:
             self.points.append((-5, 'No link to data (DOI or URL)'))
-        sg = self.fields['subjectgroup'].value
+        sg = self['subjectgroup']
         if not sg:
             self.points.append((-1, 'Missing subject group'))
         elif sg not in self.pub.entities['SubjectGroup']:
             msg = 'Undefined subjectgroup "%s"' % sg
             self.errors.append(LinkError('Undefined subjectgroup "%s"' % sg))
-        a = self.fields['acquisition'].value
+        a = self['acquisition']
         if not a:
             self.points.append((-1, 'Missing acquisition'))
         elif a not in self.pub.entities['Acquisition']:
@@ -194,15 +194,15 @@ class AnalysisWorkflow(Entity):
 
     def check(self):
         self.points.append((7, 'Existential credit'))
-        if not self.fields['method'].value:
+        if not self['method']:
             self.points.append((-1, 'Missing method'))
-        if not self.fields['methodurl'].value:
+        if not self['methodurl']:
             self.points.append((-2, 'Missing method URL'))
-        if not self.fields['software'].value:
+        if not self['software']:
             self.points.append((-1, 'Missing software'))
-        if not self.fields['softwarenitrcid'].value \
-            and not self.fields['softwarerrid'].value \
-            and not self.fields['softwareurl'].value:
+        if not self['softwarenitrcid'] \
+            and not self['softwarerrid'] \
+            and not self['softwareurl']:
                 self.points.append((-2, 'Missing software link'))
         return
 
@@ -234,15 +234,15 @@ class Observation(Entity):
 
     def check(self):
         self.points.append((10, 'Existential credit'))
-        if not self.fields['measure'].value:
+        if not self['measure']:
             self.points.append((-5, 'Missing measure'))
-        if not self.fields['data'].value:
+        if not self['data']:
             self.points.append((-2, 'Missing data'))
         else:
-            for data in self.fields['data'].value:
+            for data in self['data']:
                 if data not in self.pub.entities['Data']:
                     self.errors.append(LinkError('Undefined data "%s"' % data))
-        aw = self.fields['analysisworkflow'].value
+        aw = self['analysisworkflow']
         if not aw:
             self.points.append((-2, 'Missing analysis workflow'))
         elif aw not in self.pub.entities['AnalysisWorkflow']:
@@ -264,15 +264,15 @@ class Model(Entity):
         self.points.append((10, 'Existential credit'))
         # check if any variables are defined
         # check for bad interaction variables
-        if not self.fields['type'].value:
+        if not self['type']:
             self.points.append((-4, 'No model type defined'))
-        if not self.fields['variable'].value:
+        if not self['variable']:
             self.points.append((-4, 'No variables defined'))
         else:
             simple_vars = []
             int_vars = []
             bad_components = set()
-            for var in self.fields['variable'].value:
+            for var in self['variable']:
                 if '+' in var:
                     int_vars.append(var)
                 else:
@@ -313,20 +313,20 @@ class ModelApplication(Entity):
 
     def check(self):
         self.points.append((11, 'Existential credit'))
-        if not self.fields['url'].value:
+        if not self['url']:
             self.points.append((-5, 'No link to analysis'))
-        if not self.fields['software'].value:
+        if not self['software']:
             self.points.append((-1, 'Missing software'))
-        if not self.fields['model'].value:
+        if not self['model']:
             self.points.append((-2, 'Missing model'))
         else:
-            model = self.fields['model'].value
+            model = self['model']
             if model not in self.pub.entities['Model']:
                 self.errors.append(LinkError('Undefined model "%s"' % model))
-        if not self.fields['observation'].value:
+        if not self['observation']:
             self.points.append((-2, 'Missing observation(s)'))
         else:
-            for o in self.fields['observation'].value:
+            for o in self['observation']:
                 if o not in self.pub.entities['Observation']:
                     err = LinkError('Undefined observation "%s"' % o)
                     self.errors.append(err)
@@ -352,15 +352,15 @@ class Result(Entity):
 
     def check(self):
         self.points.append((23, 'Existential credit'))
-        if not self.fields['value'].value:
+        if not self['value']:
             self.points.append((-3, 'Missing "Value"'))
-        if not self.fields['f'].value:
+        if not self['f']:
             self.points.append((-2, 'Missing F'))
-        if not self.fields['p'].value:
+        if not self['p']:
             self.points.append((-5, 'Missing P'))
-        if not self.fields['interpretation'].value:
+        if not self['interpretation']:
             self.points.append((-2, 'Missing interpretation'))
-        ma = self.fields['modelapplication'].value
+        ma = self['modelapplication']
         if not ma:
             self.points.append((-5, 'Missing model application'))
             model_vars = None
@@ -370,22 +370,22 @@ class Result(Entity):
             model_vars = None
         else:
             ma_obj = self.pub.entities['ModelApplication'][ma]
-            model_id = ma_obj.fields['model'].value
+            model_id = ma_obj['model']
             if not model_id:
                 model_vars = None
             elif model_id not in self.pub.entities['Model']:
                 model_vars = None
             else:
                 model = self.pub.entities['Model'][model_id]
-                model_vars = model.fields['variable'].value
-        if not self.fields['variable'].value:
+                model_vars = model['variable']
+        if not self['variable']:
             self.points.append((-5, 'Missing variable(s)'))
         else:
             if not model_vars:
                 self.points.append((-2, 'No model variables to check against'))
             else:
                 bad_vars = set()
-                for var in self.fields['variable'].value:
+                for var in self['variable']:
                     if var not in model_vars:
                         bad_vars.add(var)
                 if bad_vars:
