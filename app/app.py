@@ -45,6 +45,14 @@ def publication(id):
                                  error=error, 
                                  pub=publication)
 
+@app.route('/reload/<pmid>')
+def reload(pmid):
+    set_env()
+    pmid = pmid.encode('ascii', 'replace')
+    publication = pub.Publication.get_by_pmid(pmid, True)
+    url = flask.url_for('publication', id=publication.pmid)
+    return flask.redirect(url)
+
 if __name__ == '__main__':
     app.run(debug=True)
 

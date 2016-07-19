@@ -111,7 +111,7 @@
 
             <p>Markup via PubMed Central (<a href="http://via.hypothes.is/http://www.ncbi.nlm.nih.gov/pmc/articles/{{ pub.pmc_id }}">{{ pub.pmc_id }}</a>).</p>
 
-            <p>Annotations loaded {{ pub.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} GMT.</p>
+            <p>Annotations loaded {{ pub.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} GMT.  <a href="{{ root }}/reload/{{ pub.pmid }}">Reload now</a>.</p>
 
         </div>
 
