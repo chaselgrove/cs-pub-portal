@@ -1,4 +1,5 @@
 import re
+import datetime
 import httplib
 import urllib
 import json
@@ -86,7 +87,7 @@ class Publication:
         key = 'pubmed:%s' % term
         with Cache() as cache:
             try:
-                data = cache[key]
+                (data, timestamp) = cache[key]
                 debug('got %s from cache' % key)
                 return data
             except KeyError:
@@ -153,9 +154,9 @@ class Publication:
                 debug('skipping cache check on %s' % key)
             else:
                 try:
-                    data = cache[key]
+                    (data, timestamp) = cache[key]
                     debug('got %s from cache' % key)
-                    return data
+                    return (data, timestamp)
                 except KeyError:
                     debug('%s not in cache' % key)
             conn = httplib.HTTPSConnection('hypothes.is')
@@ -168,7 +169,8 @@ class Publication:
             data = response.read()
             conn.close()
             cache[key] = data
-        return data
+            timestamp = datetime.datetime.utcnow()
+        return (data, timestamp)
 
     def _read_annotations(self, refresh_cache):
 
@@ -194,8 +196,10 @@ class Publication:
 
         url_fmt = 'http://www.ncbi.nlm.nih.gov/pmc/articles/%s'
         url = url_fmt % self.pmc_id
-        data = self._get_hypothesis_data(url, refresh_cache)
+        (data, timestamp) = self._get_hypothesis_data(url, refresh_cache)
         obj = json.loads(data)
+
+        self.timestamp = timestamp
 
         # first pass: through the annotations to generate a dictionary d0 
         # where d0[entity type] = list of (annotation ID, list of lines) tuples

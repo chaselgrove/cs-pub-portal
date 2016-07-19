@@ -1,4 +1,6 @@
 import os
+import time
+import datetime
 import bsddb
 from .debug import debug
 
@@ -56,11 +58,19 @@ class Cache:
     def __getitem__(self, key):
         if self.db is None:
             raise KeyError(key)
-        return self.db[key]
+        val = self.db[key]
+        try:
+            t = self.db['timestamp-%s' % key]
+            timestamp = datetime.datetime.utcfromtimestamp(float(t))
+        except:
+            # no timestamp or corrupt timestamp
+            timestamp = None
+        return (val, timestamp)
 
     def __setitem__(self, key, value):
         if self.is_open:
             self.db[key] = value
+            self.db['timestamp-%s' % key] = str(time.time())
         return
 
     def close(self):
