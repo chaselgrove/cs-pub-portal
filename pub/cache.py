@@ -2,6 +2,16 @@ import os
 import bsddb
 from .debug import debug
 
+if not os.environ.has_key('CSPUB_CACHE'):
+    _cache = None
+else:
+    _cache = os.environ['CSPUB_CACHE']
+
+def set_cache(cache):
+    global _cache
+    _cache = cache
+    return
+
 class Cache:
 
     # cache object (persistent cache dictionary)
@@ -21,17 +31,17 @@ class Cache:
     #     c[key2] = value
 
     def __init__(self):
-        if not os.environ.has_key('CSPUB_CACHE'):
+        if not _cache:
             debug('no cache')
             self.db = None
             self.is_open = False
             return
         try:
-            self.db = bsddb.hashopen(os.environ['CSPUB_CACHE'])
+            self.db = bsddb.hashopen(_cache)
             self.is_open = True
-            debug('cache open: %s' % os.environ['CSPUB_CACHE'])
+            debug('cache open: %s' % _cache)
         except:
-            debug('error opening cache: %s' % os.environ['CSPUB_CACHE'])
+            debug('error opening cache: %s' % _cache)
             self.db = None
             self.is_open = False
         return
