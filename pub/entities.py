@@ -34,9 +34,6 @@ class Entity:
         """set related entities"""
         return
 
-    def add_links(self):
-        return
-
     def score(self):
         """obj.score() -> (score, maximum possible score)"""
         s = 0
@@ -68,11 +65,6 @@ class SubjectGroup(Entity):
                 self.points.append((-1, 'Missing %s' % name))
         return
 
-    def add_links(self):
-        if self['diagnosis']:
-            self.links.append(('with %s subjects' % self['diagnosis'], '#'))
-        return
-
 class AcquisitionInstrument(Entity):
 
     field_defs = (('type', Field, 'Type'), 
@@ -90,18 +82,6 @@ class AcquisitionInstrument(Entity):
                     self.points.append((-2, 'Missing %s' % name))
                 else:
                     self.points.append((-1, 'Missing %s' % name))
-        return
-
-    def add_links(self):
-        if self['location']:
-            self.links.append(('run at %s' % self['location'], '#'))
-        scanner_parts = []
-        for key in ('field', 'manufacturer', 'model'):
-            if self[key]:
-                scanner_parts.append(self[key])
-        if scanner_parts:
-            text = 'using a %s scanner' % ' '.join(scanner_parts)
-            self.links.append((text, '#'))
         return
 
 class Acquisition(Entity):
@@ -139,11 +119,6 @@ class Acquisition(Entity):
         elif ai not in self.pub.entities['AcquisitionInstrument']:
             msg = 'Undefined acquisition instrument "%s"' % ai
             self.errors.append(LinkError(msg))
-        return
-
-    def add_links(self):
-        if self['type']:
-            self.links.append(('using %s images' % self['type'], '#'))
         return
 
 class Data(Entity):
@@ -206,13 +181,6 @@ class AnalysisWorkflow(Entity):
                 self.points.append((-2, 'Missing software link'))
         return
 
-    def add_links(self):
-        if self['method']:
-            self.links.append(('using %s' % self['method'], '#'))
-        if self['software']:
-            self.links.append(('using %s' % self['software'], '#'))
-        return
-
 class Observation(Entity):
 
     field_defs = (('data', MultiField, 'Data'), 
@@ -250,11 +218,6 @@ class Observation(Entity):
             self.errors.append(err)
         return
 
-    def add_links(self):
-        if self['measure']:
-            self.links.append(('reporting %s' % self['measure'], '#'))
-        return
-
 class Model(Entity):
 
     field_defs = (('type', Field, 'Type'), 
@@ -285,11 +248,6 @@ class Model(Entity):
                 vars = ', '.join(sorted(bad_components))
                 msg = 'Variables only in interaction terms: %s' % vars
                 self.points.append((-2, msg))
-        return
-
-    def add_links(self):
-        if self['type']:
-            self.links.append(('using a %s model' % self['type'], '#'))
         return
 
 class ModelApplication(Entity):
@@ -392,20 +350,6 @@ class Result(Entity):
                     fmt = 'Variables not defined in the model: %s'
                     msg = fmt % ', '.join(sorted(bad_vars))
                     self.points.append((-2, msg))
-        return
-
-    def add_links(self):
-        if self['value']:
-            self.links.append(('reporting on %s' % self['value'], '#'))
-            diagnoses = []
-            if self.model_application:
-                for o in self.model_application.observations:
-                    for d in o.data:
-                        if d.subject_group and d.subject_group['diagnosis']:
-                            diagnoses.append(d.subject_group['diagnosis'])
-            for diagnosis in diagnoses:
-                text = 'reporting on %s in %s' % (self['value'], diagnosis)
-                self.links.append((text, '#'))
         return
 
 # entities[markup entity type] = entity class

@@ -67,10 +67,7 @@ class Publication:
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
-#        for ed in self.entities.itervalues():
-#            for ent in ed.itervalues():
                 ent.check()
-                ent.add_links()
         return
 
     def _update_known_cache(self):
