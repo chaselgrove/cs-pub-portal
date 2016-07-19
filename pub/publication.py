@@ -16,61 +16,27 @@ class Publication:
 
     @classmethod
     def get_by_pmid(cls, pmid, refresh_cache=False):
-        obj = cls()
         if not pmid_re.search(pmid):
             raise ValueError('bad PMID')
+        obj = cls()
+        obj._initialize()
         obj.pmid = pmid
-        obj.title = None
-        obj.pmc_id = None
-        obj.errors = []
-        obj.entities = {}
-        for et in entities:
-            obj.entities[et] = {}
-        obj._read_pubmed()
-        obj._read_annotations(refresh_cache)
-        for ed in obj.entities.itervalues():
-            for ent in ed.itervalues():
-                ent.set_related()
-        for ed in obj.entities.itervalues():
-            for ent in ed.itervalues():
-                ent.check()
-                ent.add_links()
-        known_pubs = Publication.get_known()
-        if obj.pmid not in known_pubs:
-            known_pubs[obj.pmid] = obj.title
-            with Cache() as cache:
-                cache['publications'] = json.dumps(known_pubs)
+        obj._load(refresh_cache)
+        obj._update_known_cache()
         return obj
 
     @classmethod
     def get_by_pmc_id(cls, pmc_id, refresh_cache=False):
-        obj = cls()
         if not pmc_id_re.search(pmc_id):
             raise ValueError('bad PMC ID')
+        obj = cls()
+        obj._initialize()
         if pmc_id.upper().startswith('PMC'):
             obj.pmc_id = pmc_id.upper()
         else:
             obj.pmc_id = 'PMC%s' % pmc_id
-        obj.pmid = None
-        obj.title = None
-        obj.errors = []
-        obj.entities = {}
-        for et in entities:
-            obj.entities[et] = {}
-        obj._read_pubmed()
-        obj._read_annotations(refresh_cache)
-        for ed in obj.entities.itervalues():
-            for ent in ed.itervalues():
-                ent.set_related()
-        for ed in obj.entities.itervalues():
-            for ent in ed.itervalues():
-                ent.check()
-                ent.add_links()
-        known_pubs = Publication.get_known()
-        if obj.pmid not in known_pubs:
-            known_pubs[obj.pmid] = obj.title
-            with Cache() as cache:
-                cache['publications'] = json.dumps(known_pubs)
+        obj._load(refresh_cache)
+        obj._update_known_cache()
         return obj
 
     @classmethod
@@ -82,6 +48,39 @@ class Publication:
             except KeyError:
                 rv = {}
         return rv
+
+    def _initialize(self):
+        """set attributes to their default values"""
+        self.pmid = None
+        self.pmc_id = None
+        self.title = None
+        self.errors = []
+        self.entities = {}
+        for et in entities:
+            self.entities[et] = {}
+        return
+
+    def _load(self, refresh_cache):
+        """load information from pubmed and hypothesis"""
+        self._read_pubmed()
+        self._read_annotations(refresh_cache)
+        for ed in self.entities.itervalues():
+            for ent in ed.itervalues():
+                ent.set_related()
+        for ed in self.entities.itervalues():
+            for ent in ed.itervalues():
+                ent.check()
+                ent.add_links()
+        return
+
+    def _update_known_cache(self):
+        """update the known publications cache"""
+        known_pubs = Publication.get_known()
+        if self.pmid not in known_pubs:
+            known_pubs[self.pmid] = self.title
+            with Cache() as cache:
+                cache['publications'] = json.dumps(known_pubs)
+        return
 
     def score(self):
         s = 0
