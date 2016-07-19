@@ -18,13 +18,14 @@ def index():
     set_env()
     pmid = flask.request.args.get('pmid')
     if pmid:
-        pmid = pmid.strip()
+        pmid = pmid.strip().encode('ascii', 'replace')
         return flask.redirect(flask.url_for('publication', pmid=pmid))
     return flask.render_template('index.tmpl', root=flask.request.script_root)
 
 @app.route('/pm/<pmid>')
 def publication(pmid):
     set_env()
+    pmid = pmid.encode('ascii', 'replace')
     error = None
     publication = None
     try:
