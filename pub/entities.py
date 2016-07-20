@@ -101,11 +101,15 @@ class Acquisition(Entity):
 
     def set_related(self):
         ai_id = self['acquisitioninstrument']
-        if ai_id:
+        if ai_id is None:
+            self.acquisition_instrument = None
+        elif ai_id not in self.pub.entities['AcquisitionInstrument']:
+            self.acquisition_instrument = None
+            msg = 'Undefined acquisition instrument "%s"' % ai_id
+            self.errors.append(LinkError(msg))
+        else:
             ai = self.pub.entities['AcquisitionInstrument'][ai_id]
             self.acquisition_instrument = ai
-        else:
-            self.acquisition_instrument = None
         return
 
     def check(self):
@@ -113,12 +117,8 @@ class Acquisition(Entity):
         # check for missing fields
         if not self['type']:
             self.points.append((-1, 'Missing type'))
-        ai = self['acquisitioninstrument']
-        if not ai:
+        if not self.acquisition_instrument:
             self.points.append((-1, 'Missing acquisition instrument'))
-        elif ai not in self.pub.entities['AcquisitionInstrument']:
-            msg = 'Undefined acquisition instrument "%s"' % ai
-            self.errors.append(LinkError(msg))
         return
 
 class Data(Entity):
@@ -130,32 +130,31 @@ class Data(Entity):
 
     def set_related(self):
         a_id = self['acquisition']
-        if a_id:
-            self.acquisition = self.pub.entities['Acquisition'][a_id]
-        else:
+        if a_id is None:
             self.acquisition = None
-        sg_id = self['subjectgroup']
-        if sg_id:
-            self.subject_group = self.pub.entities['SubjectGroup'][sg_id]
+        elif a_id not in self.pub.entities['Acquisition']:
+            self.acquisition = None
+            self.errors.append(LinkError('Undefined acquisition "%s"' % a_id))
         else:
+            self.acquisition = self.pub.entities['Acquisition'][a_id]
+        sg_id = self['subjectgroup']
+        if sg_id is None:
             self.subject_group = None
+        if sg_id not in self.pub.entities['SubjectGroup']:
+            self.subject_group = None
+            self.errors.append(LinkError('Undefined subjectgroup "%s"' % sg_id))
+        else:
+            self.subject_group = self.pub.entities['SubjectGroup'][sg_id]
         return
 
     def check(self):
         self.points.append((10, 'Existential credit'))
         if not self['url'] and not self['doi']:
             self.points.append((-5, 'No link to data (DOI or URL)'))
-        sg = self['subjectgroup']
-        if not sg:
+        if not self.subject_group:
             self.points.append((-1, 'Missing subject group'))
-        elif sg not in self.pub.entities['SubjectGroup']:
-            msg = 'Undefined subjectgroup "%s"' % sg
-            self.errors.append(LinkError('Undefined subjectgroup "%s"' % sg))
-        a = self['acquisition']
-        if not a:
+        if not self.acquisition:
             self.points.append((-1, 'Missing acquisition'))
-        elif a not in self.pub.entities['Acquisition']:
-            self.errors.append(LinkError('Undefined acquisition "%s"' % a))
         return
 
 class AnalysisWorkflow(Entity):
@@ -189,33 +188,32 @@ class Observation(Entity):
 
     def set_related(self):
         aw_id = self['analysisworkflow']
-        if aw_id:
+        if aw_id is None:
+            self.analysis_workflow = None
+        elif aw_id not in self.pub.entities['AnalysisWorkflow']:
+            self.analysis_workflow = None
+            err = LinkError('Undefined analysis workflow "%s"' % aw)
+            self.errors.append(err)
+        else:
             aw = self.pub.entities['AnalysisWorkflow'][aw_id]
             self.analysis_workflow = aw
-        else:
-            self.analysis_workflow = None
         self.data = []
         if self['data']:
             for d_id in self['data']:
-                self.data.append(self.pub.entities['Data'][d_id])
+                if d_id not in self.pub.entities['Data']:
+                    self.errors.append(LinkError('Undefined data "%s"' % d_id))
+                else:
+                    self.data.append(self.pub.entities['Data'][d_id])
         return
 
     def check(self):
         self.points.append((10, 'Existential credit'))
         if not self['measure']:
             self.points.append((-5, 'Missing measure'))
-        if not self['data']:
+        if not self.data:
             self.points.append((-2, 'Missing data'))
-        else:
-            for data in self['data']:
-                if data not in self.pub.entities['Data']:
-                    self.errors.append(LinkError('Undefined data "%s"' % data))
-        aw = self['analysisworkflow']
-        if not aw:
+        if not self.analysis_workflow:
             self.points.append((-2, 'Missing analysis workflow'))
-        elif aw not in self.pub.entities['AnalysisWorkflow']:
-            err = LinkError('Undefined analysis workflow "%s"' % aw)
-            self.errors.append(err)
         return
 
 class Model(Entity):
@@ -259,14 +257,22 @@ class ModelApplication(Entity):
 
     def set_related(self):
         m_id = self['model']
-        if m_id:
-            self.model = self.pub.entities['Model'][m_id]
-        else:
+        if m_id is None:
             self.model = None
+        elif m_id not in self.pub.entities['Model']:
+            self.model = None
+            self.errors.append(LinkError('Undefined model "%s"' % m_id))
+        else:
+            self.model = self.pub.entities['Model'][m_id]
         self.observations = []
         if self['observation']:
             for o_id in self['observation']:
-                self.observations.append(self.pub.entities['Observation'][o_id])
+                if o_id not in self.pub.entities['Observation']:
+                    err = LinkError('Undefined observation "%s"' % o_id)
+                    self.errors.append(err)
+                else:
+                    obs = self.pub.entities['Observation'][o_id]
+                    self.observations.append(obs)
         return
 
     def check(self):
@@ -275,19 +281,10 @@ class ModelApplication(Entity):
             self.points.append((-5, 'No link to analysis'))
         if not self['software']:
             self.points.append((-1, 'Missing software'))
-        if not self['model']:
+        if not self.model:
             self.points.append((-2, 'Missing model'))
-        else:
-            model = self['model']
-            if model not in self.pub.entities['Model']:
-                self.errors.append(LinkError('Undefined model "%s"' % model))
         if not self['observation']:
             self.points.append((-2, 'Missing observation(s)'))
-        else:
-            for o in self['observation']:
-                if o not in self.pub.entities['Observation']:
-                    err = LinkError('Undefined observation "%s"' % o)
-                    self.errors.append(err)
         return
 
 class Result(Entity):
@@ -301,11 +298,15 @@ class Result(Entity):
 
     def set_related(self):
         ma_id = self['modelapplication']
-        if ma_id:
+        if ma_id is None:
+            self.model_application = None
+        elif ma_id not in self.pub.entities['ModelApplication']:
+            self.model_application = None
+            err = LinkError('Undefined model application "%s"' % ma_id)
+            self.errors.append(err)
+        else:
             ma = self.pub.entities['ModelApplication'][ma_id]
             self.model_application = ma
-        else:
-            self.model_application = None
         return
 
     def check(self):
@@ -318,38 +319,22 @@ class Result(Entity):
             self.points.append((-5, 'Missing P'))
         if not self['interpretation']:
             self.points.append((-2, 'Missing interpretation'))
-        ma = self['modelapplication']
-        if not ma:
+        model_vars = []
+        if not self.model_application:
             self.points.append((-5, 'Missing model application'))
-            model_vars = None
-        elif ma not in self.pub.entities['ModelApplication']:
-            err = LinkError('Undefined model application "%s"' % ma)
-            self.errors.append(err)
-            model_vars = None
-        else:
-            ma_obj = self.pub.entities['ModelApplication'][ma]
-            model_id = ma_obj['model']
-            if not model_id:
-                model_vars = None
-            elif model_id not in self.pub.entities['Model']:
-                model_vars = None
-            else:
-                model = self.pub.entities['Model'][model_id]
-                model_vars = model['variable']
+        elif self.model_application.model:
+            model_vars = self.model_application.model['variable']
         if not self['variable']:
             self.points.append((-5, 'Missing variable(s)'))
         else:
-            if not model_vars:
-                self.points.append((-2, 'No model variables to check against'))
-            else:
-                bad_vars = set()
-                for var in self['variable']:
-                    if var not in model_vars:
-                        bad_vars.add(var)
-                if bad_vars:
-                    fmt = 'Variables not defined in the model: %s'
-                    msg = fmt % ', '.join(sorted(bad_vars))
-                    self.points.append((-2, msg))
+            bad_vars = set()
+            for var in self['variable']:
+                if var not in model_vars:
+                    bad_vars.add(var)
+            if bad_vars:
+                fmt = 'Variables not defined in the model: %s'
+                msg = fmt % ', '.join(sorted(bad_vars))
+                self.points.append((-2, msg))
         return
 
 # entities[markup entity type] = entity class

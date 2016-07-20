@@ -67,6 +67,10 @@ class Publication:
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
+        # run all .set_related() before any .check() because some .check()s 
+        # rely on other entities' cross-references
+        for ed in self.entities.itervalues():
+            for ent in ed.itervalues():
                 ent.check()
         return
 
