@@ -61,7 +61,7 @@ class RRIDField(Field):
 
 class MultiField(BaseField):
 
-    """basic field with multiple values"""
+    """basic field with multiple unique values"""
 
     def __init__(self, display_name):
         BaseField.__init__(self, display_name)
@@ -71,7 +71,8 @@ class MultiField(BaseField):
     def set(self, value):
         if not self.value:
             self.value = []
-        self.value.append(value)
+        if value not in self.value:
+            self.value.append(value)
         return
 
     def render_value(self):
