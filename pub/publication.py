@@ -10,7 +10,7 @@ from .cache import Cache
 from .debug import debug
 
 pmid_re = re.compile('^\d+$')
-pmc_id_re = re.compile('^(pmc)?\d+$', re.IGNORECASE)
+pmc_id_re = re.compile('pmc\d+$', re.IGNORECASE)
 
 class Publication:
 
@@ -31,10 +31,7 @@ class Publication:
             raise ValueError('bad PMC ID')
         obj = cls()
         obj._initialize()
-        if pmc_id.upper().startswith('PMC'):
-            obj.pmc_id = pmc_id.upper()
-        else:
-            obj.pmc_id = 'PMC%s' % pmc_id
+        obj.pmc_id = pmc_id.upper()
         obj._load(refresh_cache)
         obj._update_known_cache()
         return obj

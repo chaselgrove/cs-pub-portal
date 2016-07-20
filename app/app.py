@@ -30,21 +30,21 @@ def publication(id):
     id = id.encode('ascii', 'replace')
     error = None
     publication = None
-    if pub.publication.pmid_re.search(id):
-        try:
-            publication = pub.Publication.get_by_pmid(id)
-        except pub.PublicationNotFoundError:
-            pass
-    if not publication:
+    if pub.publication.pmc_id_re.search(id):
         try:
             publication = pub.Publication.get_by_pmc_id(id)
-        except ValueError:
-            error = 'Bad ID "%s"' % id
         except pub.PublicationNotFoundError:
-            error = 'Publication %s not found' % id
+            error = 'Publication PMC ID %s not found' % id
         else:
             url = flask.url_for('publication', id=publication.pmid)
             return flask.redirect(url)
+    elif pub.publication.pmid_re.search(id):
+        try:
+            publication = pub.Publication.get_by_pmid(id)
+        except pub.PublicationNotFoundError:
+            error = 'Publication PMID %s not found' % id
+    else:
+        error = 'Bad ID "%s"' % id
     return flask.render_template('pub.tmpl', 
                                  root=flask.request.script_root, 
                                  error=error, 
