@@ -128,6 +128,12 @@ class Data(Entity):
                   ('acquisition', Field, 'Acquisition'), 
                   ('subjectgroup', Field, 'Subject Group'))
 
+    def __init__(self, pub, id, values):
+        Entity.__init__(self, pub, id, values)
+        # set in Observation.set_related()
+        self.observations = []
+        return
+
     def set_related(self):
         a_id = self['acquisition']
         if a_id is None:
@@ -186,6 +192,13 @@ class Observation(Entity):
                   ('analysisworkflow', Field, 'Analysis Workflow'), 
                   ('measure', Field, 'Measure'))
 
+    def __init__(self, pub, id, values):
+        Entity.__init__(self, pub, id, values)
+        # set in ModelApplication.set_related()
+        self.model_applications = []
+        return
+
+
     def set_related(self):
         aw_id = self['analysisworkflow']
         if aw_id is None:
@@ -203,7 +216,9 @@ class Observation(Entity):
                 if d_id not in self.pub.entities['Data']:
                     self.errors.append(LinkError('Undefined data "%s"' % d_id))
                 else:
-                    self.data.append(self.pub.entities['Data'][d_id])
+                    d = self.pub.entities['Data'][d_id]
+                    self.data.append(d)
+                    d.observations.append(self)
         return
 
     def score(self):
@@ -273,6 +288,7 @@ class ModelApplication(Entity):
                 else:
                     obs = self.pub.entities['Observation'][o_id]
                     self.observations.append(obs)
+                    obs.model_applications.append(self)
         return
 
     def score(self):
