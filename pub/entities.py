@@ -34,8 +34,8 @@ class Entity:
         """set related entities"""
         return
 
-    def score(self):
-        """obj.score() -> (score, maximum possible score)"""
+    def get_scores(self):
+        """obj.get_scores() -> (score, maximum possible score)"""
         s = 0
         max = 0
         for (val, _) in self.points:
@@ -57,7 +57,7 @@ class SubjectGroup(Entity):
                   ('agemean', Field, 'Age mean'), 
                   ('agesd', Field, 'Age SD'))
 
-    def check(self):
+    def score(self):
         self.points.append((5, 'Existential credit'))
         # check for missing fields
         for (name, field) in self.fields.iteritems():
@@ -73,7 +73,7 @@ class AcquisitionInstrument(Entity):
                   ('manufacturer', Field, 'Manufacturer'), 
                   ('model', Field, 'Model'))
 
-    def check(self):
+    def score(self):
         self.points.append((7, 'Existential credit'))
         # check for missing fields
         for (name, field) in self.fields.iteritems():
@@ -112,7 +112,7 @@ class Acquisition(Entity):
             self.acquisition_instrument = ai
         return
 
-    def check(self):
+    def score(self):
         self.points.append((3, 'Existential credit'))
         # check for missing fields
         if not self['type']:
@@ -147,7 +147,7 @@ class Data(Entity):
             self.subject_group = self.pub.entities['SubjectGroup'][sg_id]
         return
 
-    def check(self):
+    def score(self):
         self.points.append((10, 'Existential credit'))
         if not self['url'] and not self['doi']:
             self.points.append((-5, 'No link to data (DOI or URL)'))
@@ -166,7 +166,7 @@ class AnalysisWorkflow(Entity):
                   ('softwarerrid', RRIDField, 'Software RRID'), 
                   ('softwareurl', URLField, 'Software URL'))
 
-    def check(self):
+    def score(self):
         self.points.append((7, 'Existential credit'))
         if not self['method']:
             self.points.append((-1, 'Missing method'))
@@ -206,7 +206,7 @@ class Observation(Entity):
                     self.data.append(self.pub.entities['Data'][d_id])
         return
 
-    def check(self):
+    def score(self):
         self.points.append((10, 'Existential credit'))
         if not self['measure']:
             self.points.append((-5, 'Missing measure'))
@@ -221,7 +221,7 @@ class Model(Entity):
     field_defs = (('type', Field, 'Type'), 
                   ('variable', MultiField, 'Variables'))
 
-    def check(self):
+    def score(self):
         self.points.append((10, 'Existential credit'))
         # check if any variables are defined
         # check for bad interaction variables
@@ -275,7 +275,7 @@ class ModelApplication(Entity):
                     self.observations.append(obs)
         return
 
-    def check(self):
+    def score(self):
         self.points.append((11, 'Existential credit'))
         if not self['url']:
             self.points.append((-5, 'No link to analysis'))
@@ -309,7 +309,7 @@ class Result(Entity):
             self.model_application = ma
         return
 
-    def check(self):
+    def score(self):
         self.points.append((23, 'Existential credit'))
         if not self['value']:
             self.points.append((-3, 'Missing "Value"'))

@@ -19,7 +19,7 @@
 {% macro entity(ent) %}
     <div class="entity">
         <div class="header">
-            {% set (score, max_score) = ent.score() %}
+            {% set (score, max_score) = ent.get_scores() %}
             <div class="id">{{ ent.id }}</div>
             <div class="score">{{ score }}/{{ max_score }}</div>
         </div>
@@ -63,7 +63,7 @@
 
     <div id="summary">
 
-        {% set (score, max_score) = pub.score() %}
+        {% set (score, max_score) = pub.get_scores() %}
         <div id="score">
 
             <div id="score_ex1" class="score_ex">

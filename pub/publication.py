@@ -67,11 +67,11 @@ class Publication:
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
-        # run all .set_related() before any .check() because some .check()s 
+        # run all .set_related() before any .score() because some .score()s 
         # rely on other entities' cross-references
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
-                ent.check()
+                ent.score()
         return
 
     def _update_known_cache(self):
@@ -83,18 +83,18 @@ class Publication:
                 cache['publications'] = json.dumps(known_pubs)
         return
 
-    def score(self):
+    def get_scores(self):
         s = 0
         max = 0
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
-                (es, emax) = ent.score()
+                (es, emax) = ent.get_scores()
                 s += es
                 max += emax
         return (s, max)
 
     def stars(self):
-        (s, max) = self.score()
+        (s, max) = self.get_scores()
         if max == 0:
             return 0
         f = float(s)/max;
