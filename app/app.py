@@ -5,6 +5,7 @@ app = flask.Flask(__name__, static_url_path='')
 
 def set_env():
     pub.set_debug(flask.request.environ.get('CSPUB_DEBUG'))
+    pub.set_config(flask.request.environ.get('CSPUB_CONFIG'))
     return
 
 @app.route('/pub.css')
