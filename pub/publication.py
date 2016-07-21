@@ -6,7 +6,6 @@ import json
 
 from .entities import *
 from .exceptions import *
-from .cache import Cache
 from .debug import debug
 
 pmid_re = re.compile('^\d+$')
@@ -20,8 +19,10 @@ class Publication:
             raise ValueError('bad PMID')
         obj = cls()
         obj.pmid = pmid
-        obj._load(refresh_cache)
-        obj._update_known_cache()
+        if not refresh_cache:
+            if obj._load_from_db():
+                return obj
+        obj._load()
         return obj
 
     @classmethod
@@ -30,19 +31,15 @@ class Publication:
             raise ValueError('bad PMC ID')
         obj = cls()
         obj.pmc_id = pmc_id.upper()
-        obj._load(refresh_cache)
-        obj._update_known_cache()
+        if not refresh_cache:
+            if obj._load_from_db():
+                return obj
+        obj._load()
         return obj
 
     @classmethod
     def get_known(cls):
-        with Cache() as cache:
-            try:
-                (data, timestamp) = cache['publications']
-                rv = json.loads(data)
-            except KeyError:
-                rv = {}
-        return rv
+        return {}
 
     def __init__(self):
         self.pmid = None
@@ -54,10 +51,14 @@ class Publication:
             self.entities[et] = {}
         return
 
-    def _load(self, refresh_cache):
+    def _load_from_db(self):
+        return False
+
+    def _load(self):
         """load information from pubmed and hypothesis"""
         self._read_pubmed()
-        self._read_annotations(refresh_cache)
+        self._read_annotations()
+        self.timestamp = datetime.datetime.utcnow()
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
@@ -66,15 +67,6 @@ class Publication:
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.score()
-        return
-
-    def _update_known_cache(self):
-        """update the known publications cache"""
-        known_pubs = Publication.get_known()
-        if self.pmid not in known_pubs:
-            known_pubs[self.pmid] = self.title
-            with Cache() as cache:
-                cache['publications'] = json.dumps(known_pubs)
         return
 
     def get_scores(self):
@@ -95,28 +87,17 @@ class Publication:
         return int((f+0.1) / 0.2)
 
     def _get_pubmed_data(self, term):
-        """return the cached pubmed data (if we have it); otherwise get it 
-        from pubmed and put it in the cache
-        """
         key = 'pubmed:%s' % term
-        with Cache() as cache:
-            try:
-                (data, timestamp) = cache[key]
-                debug('got %s from cache' % key)
-                return data
-            except KeyError:
-                debug('%s not in cache' % key)
-            conn = httplib.HTTPSConnection('www.ncbi.nlm.nih.gov')
-            params = {'report': 'medline', 'format': 'text', 'term': term}
-            url = '/pubmed/?%s' % urllib.urlencode(params)
-            conn.request('GET', url)
-            response = conn.getresponse()
-            if response.status != 200:
-                msg = 'PubMed response status %d' % response.status
-                raise PubMedError(msg)
-            data = response.read()
-            conn.close()
-            cache[key] = data
+        conn = httplib.HTTPSConnection('www.ncbi.nlm.nih.gov')
+        params = {'report': 'medline', 'format': 'text', 'term': term}
+        url = '/pubmed/?%s' % urllib.urlencode(params)
+        conn.request('GET', url)
+        response = conn.getresponse()
+        if response.status != 200:
+            msg = 'PubMed response status %d' % response.status
+            raise PubMedError(msg)
+        data = response.read()
+        conn.close()
         return data
 
     def _read_pubmed(self):
@@ -155,38 +136,20 @@ class Publication:
                 raise PublicationNotFoundError('PMC ID', self.pmc_id)
         return
 
-    def _get_hypothesis_data(self, url, refresh_cache):
-        """return the cached hypothesis data (if we have it); otherwise get it 
-        from hypothesis and put it in the cache
-
-        setting refresh_cache to True will skip the cache check and force 
-        getting data from hypothesis
-        """
+    def _get_hypothesis_data(self, url):
         key = 'hypothesisurl:%s' % url
-        with Cache() as cache:
-            if refresh_cache:
-                debug('skipping cache check on %s' % key)
-            else:
-                try:
-                    (data, timestamp) = cache[key]
-                    debug('got %s from cache' % key)
-                    return (data, timestamp)
-                except KeyError:
-                    debug('%s not in cache' % key)
-            conn = httplib.HTTPSConnection('hypothes.is')
-            url = '/api/search?%s' % urllib.urlencode({'uri': url})
-            conn.request('GET', url, '', {'Accept': 'application/json'})
-            response = conn.getresponse()
-            if response.status != 200:
-                msg = 'hypothes.is response status %d' % response.status
-                raise HypothesisError(msg)
-            data = response.read()
-            conn.close()
-            cache[key] = data
-            timestamp = datetime.datetime.utcnow()
-        return (data, timestamp)
+        conn = httplib.HTTPSConnection('hypothes.is')
+        url = '/api/search?%s' % urllib.urlencode({'uri': url})
+        conn.request('GET', url, '', {'Accept': 'application/json'})
+        response = conn.getresponse()
+        if response.status != 200:
+            msg = 'hypothes.is response status %d' % response.status
+            raise HypothesisError(msg)
+        data = response.read()
+        conn.close()
+        return data
 
-    def _read_annotations(self, refresh_cache):
+    def _read_annotations(self):
 
         """reads annotations from a PubMed Central manuscript
 
@@ -210,10 +173,8 @@ class Publication:
 
         url_fmt = 'http://www.ncbi.nlm.nih.gov/pmc/articles/%s'
         url = url_fmt % self.pmc_id
-        (data, timestamp) = self._get_hypothesis_data(url, refresh_cache)
+        data = self._get_hypothesis_data(url)
         obj = json.loads(data)
-
-        self.timestamp = timestamp
 
         # first pass: through the annotations to generate a dictionary d0 
         # where d0[entity type] = list of (annotation ID, list of lines) tuples
