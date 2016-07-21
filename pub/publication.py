@@ -19,7 +19,6 @@ class Publication:
         if not pmid_re.search(pmid):
             raise ValueError('bad PMID')
         obj = cls()
-        obj._initialize()
         obj.pmid = pmid
         obj._load(refresh_cache)
         obj._update_known_cache()
@@ -30,7 +29,6 @@ class Publication:
         if not pmc_id_re.search(pmc_id):
             raise ValueError('bad PMC ID')
         obj = cls()
-        obj._initialize()
         obj.pmc_id = pmc_id.upper()
         obj._load(refresh_cache)
         obj._update_known_cache()
@@ -46,8 +44,7 @@ class Publication:
                 rv = {}
         return rv
 
-    def _initialize(self):
-        """set attributes to their default values"""
+    def __init__(self):
         self.pmid = None
         self.pmc_id = None
         self.title = None
