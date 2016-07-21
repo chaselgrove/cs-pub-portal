@@ -11,6 +11,14 @@ class DB:
                                     password=c.get('db', 'password'))
         return
 
+    def execute(self, sql):
+        c = self._db.cursor()
+        c.execute(sql)
+        for row in c:
+            yield row
+        c.close()
+        return
+
     def close(self):
         self._db.close()
         return

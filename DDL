@@ -1,0 +1,126 @@
+CREATE TABLE publication (
+    pmid TEXT PRIMARY KEY, 
+    pmc_id TEXT NOT NULL UNIQUE, 
+    retrieved TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), 
+    title TEXT NOT NULL
+);
+
+CREATE TABLE publication_error (
+    id SERIAL PRIMARY KEY, 
+    publication INTEGER NOT NULL 
+    REFERENCES publication, 
+    annotation TEXT NOT NULL, 
+    error_type TEXT NOT NULL, 
+    data TEXT DEFAULT NULL
+);
+
+CREATE TABLE entity_error (
+    id SERIAL PRIMARY KEY, 
+    entity_type TEXT NOT NULL, 
+    entity_id TEXT NOT NULL, 
+    error_type TEXT NOT NULL, 
+    data TEXT DEFAULT NULL
+);
+
+CREATE TABLE subject_group (
+    id TEXT PRIMARY KEY, 
+    diagnosis TEXT DEFAULT NULL, 
+    n_subjects TEXT DEFAULT NULL, 
+    age_mean TEXT DEFAULT NULL, 
+    age_sd TEXT DEFAULT NULL
+);
+
+CREATE TABLE acquisition_instrument (
+    id TEXT PRIMARY KEY, 
+    type TEXT DEFAULT NULL, 
+    location TEXT DEFAULT NULL, 
+    field TEXT DEFAULT NULL, 
+    manufacturer TEXT DEFAULT NULL, 
+    model TEXT DEFAULT NULL
+);
+
+CREATE TABLE acquisition (
+    id TEXT PRIMARY KEY, 
+    acquisition_instrument TEXT DEFAULT NULL 
+    REFERENCES acquisition_instrument, 
+    type TEXT DEFAULT NULL, 
+    n_slice TEXT DEFAULT NULL, 
+    prep TEXT DEFAULT NULL, 
+    tr TEXT DEFAULT NULL, 
+    te TEXT DEFAULT NULL, 
+    ti TEXT DEFAULT NULL, 
+    flip_angle TEXT DEFAULT NULL, 
+    fov TEXT DEFAULT NULL, 
+    slice_thickness TEXT DEFAULT NULL, 
+    matrix TEXT DEFAULT NULL, 
+    n_excitations TEXT DEFAULT NULL
+);
+
+CREATE TABLE data (
+    id TEXT PRIMARY KEY, 
+    acquisition TEXT DEFAULT NULL REFERENCES acquisition, 
+    subject_group TEXT DEFAULT NULL REFERENCES subject_group, 
+    url TEXT DEFAULT NULL, 
+    doi TEXT DEFAULT NULL
+);
+
+CREATE TABLE analysis_workflow (
+    id TEXT PRIMARY KEY, 
+    method TEXT DEFAULT NULL, 
+    methodurl TEXT DEFAULT NULL, 
+    software TEXT DEFAULT NULL, 
+    software_nitrc_id TEXT DEFAULT NULL, 
+    software_rrid TEXT DEFAULT NULL, 
+    software_url TEXT DEFAULT NULL
+);
+
+CREATE TABLE observation (
+    id TEXT PRIMARY KEY, 
+    analysis_workflow TEXT DEFAULT NULL REFERENCES analysis_workflow, 
+    measure TEXT DEFAULT NULL
+);
+
+CREATE TABLE dataXobservation (
+    data TEXT NOT NULL REFERENCES data, 
+    observation TEXT NOT NULL REFERENCES observation, 
+    PRIMARY KEY (data, observation)
+);
+
+CREATE TABLE model (
+    id TEXT PRIMARY KEY, 
+    type TEXT DEFAULT NULL
+);
+
+CREATE TABLE model_variable (
+    model TEXT NOT NULL REFERENCES model, 
+    variable TEXT NOT NULL, 
+    PRIMARY KEY (model, variable)
+);
+
+CREATE TABLE model_application (
+    id TEXT PRIMARY KEY, 
+    url TEXT DEFAULT NULL, 
+    software TEXT DEFAULT NULL
+);
+
+CREATE TABLE observationXmodel_application (
+    observation TEXT REFERENCES observation, 
+    model_application TEXT REFERENCES model_application, 
+    PRIMARY KEY (observation, model_application)
+);
+
+CREATE TABLE result (
+    id TEXT PRIMARY KEY, 
+    value TEXT DEFAULT NULL, 
+    f TEXT DEFAULT NULL, 
+    p TEXT DEFAULT NULL, 
+    interpretation TEXT DEFAULT NULL
+);
+
+CREATE TABLE result_variable (
+    result TEXT NOT NULL REFERENCES result, 
+    variable TEXT NOT NULL, 
+    PRIMARY KEY (result, variable)
+);
+
+-- eof
