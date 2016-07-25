@@ -1,7 +1,7 @@
 CREATE TABLE publication (
     pmid TEXT PRIMARY KEY, 
     pmc_id TEXT NOT NULL UNIQUE, 
-    retrieved TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), 
+    retrieved TIMESTAMP NOT NULL DEFAULT NOW(), 
     title TEXT NOT NULL
 );
 
