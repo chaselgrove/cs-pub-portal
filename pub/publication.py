@@ -7,7 +7,7 @@ import json
 from .entities import *
 from .exceptions import *
 from .debug import debug
-from .db import DB
+from . import database
 
 pmid_re = re.compile('^\d+$')
 pmc_id_re = re.compile('pmc\d+$', re.IGNORECASE)
@@ -40,10 +40,11 @@ class Publication:
 
     @classmethod
     def get_known(cls):
-        db = DB()
-        d = {}
-        for (pmid, title) in db.execute("SELECT pmid, title FROM publication"):
-            d[pmid] = title
+        db = database.connect()
+        with db:
+            with db.cursor() as c:
+                c.execute("SELECT pmid, title FROM publication")
+                d = dict(c)
         db.close()
         return d
 
