@@ -20,7 +20,9 @@ class Publication:
             raise ValueError('bad PMID')
         obj = cls()
         obj.pmid = pmid
-        if not refresh_cache:
+        if refresh_cache:
+            cls._clear_pmid(pmid)
+        else:
             if obj._load_from_db():
                 return obj
         obj._load()
@@ -32,7 +34,9 @@ class Publication:
             raise ValueError('bad PMC ID')
         obj = cls()
         obj.pmc_id = pmc_id.upper()
-        if not refresh_cache:
+        if refresh_cache:
+            cls._clear_pmc_id(pmc_id)
+        else:
             if obj._load_from_db():
                 return obj
         obj._load()
@@ -48,6 +52,25 @@ class Publication:
         db.close()
         return d
 
+    @classmethod
+    def _clear_pmid(cls, pmid):
+        with database.connect() as db:
+            with db.cursor() as c:
+                c.execute("DELETE FROM publication WHERE pmid = %s", (pmid, ))
+        return
+
+    @classmethod
+    def _clear_pmc_id(cls, pmc_id):
+        with database.connect() as db:
+            with db.cursor() as c:
+                query = "SELECT pmid FROM publication WHERE pmc_id = %s"
+                c.execute(query, (pmc_id, ))
+                if c.rowcount == 0:
+                    return
+                pmid = c.fetchone()[0]
+        cls._clear_pmid(pmid)
+        return
+
     def __init__(self):
         self.pmid = None
         self.pmc_id = None
@@ -59,13 +82,33 @@ class Publication:
         return
 
     def _load_from_db(self):
-        return False
+        if self.pmid:
+            query = "SELECT pmid, pmc_id, retrieved, title FROM publication WHERE pmid = %s"
+            params = (self.pmid, )
+        elif self.pmc_id:
+            query = "SELECT pmid, pmc_id, retrieved, title FROM publication WHERE pmc_id = %s"
+            params = (self.pmc_id, )
+        else:
+            raise ValueError('neither PMID nor PMC ID given to _load_from_db()')
+        with database.connect() as db:
+            with db.cursor() as c:
+                c.execute(query, params)
+                if not c.rowcount:
+                    return False
+                row = c.fetchone()
+        self.pmid = row[0]
+        self.pmc_id = row[1]
+        self.timestamp = row[2]
+        self.title = row[3]
+        self._load(annot_only=True)
+        return True
 
-    def _load(self):
+    def _load(self, annot_only=False):
         """load information from pubmed and hypothesis"""
-        self._read_pubmed()
+        if not annot_only:
+            self._read_pubmed()
+            self.timestamp = datetime.datetime.utcnow()
         self._read_annotations()
-        self.timestamp = datetime.datetime.utcnow()
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.set_related()
@@ -74,6 +117,11 @@ class Publication:
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.score()
+        if annot_only:
+            return
+        with database.connect() as db:
+            with db.cursor() as c:
+                c.execute("INSERT INTO publication (pmid, pmc_id, retrieved, title) VALUES (%s, %s, %s, %s)", (self.pmid, self.pmc_id, self.timestamp, self.title))
         return
 
     def get_scores(self):
