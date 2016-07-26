@@ -162,6 +162,10 @@ class Publication:
                               error.__class__.__name__, 
                               error.data)
                     c.execute(query, params)
+                for ed in self.entities.itervalues():
+                    for ent in ed.itervalues():
+                        ent._insert(c)
+                        ent.set_related()
         return
 
     def get_scores(self):

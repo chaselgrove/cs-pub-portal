@@ -37,6 +37,22 @@ class Entity(object):
         cursor.execute(query, (pmid, ))
         return
 
+    def _insert(self, cursor):
+        query = """INSERT INTO entity_error (publication, 
+                                             entity_type, 
+                                             entity_id, 
+                                             error_type, 
+                                             data) 
+                     VALUES (%s, %s, %s, %s, %s)"""
+        for error in self.errors:
+            params = (self.pub.pmid, 
+                      self.table, 
+                      self.id, 
+                      error.__class__.__name__, 
+                      error.data)
+            cursor.execute(query, params)
+        return
+
     def set_related(self):
         """set related entities"""
         return
