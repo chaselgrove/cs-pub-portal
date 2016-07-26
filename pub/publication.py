@@ -108,6 +108,20 @@ class Publication:
         self.timestamp = row[2]
         self.title = row[3]
         self._load(annot_only=True)
+        self.errors = []
+        with database.connect() as db:
+            with db.cursor() as c:
+                query = """SELECT annotation, error_type, data 
+                             FROM publication_error 
+                            WHERE publication = %s"""
+                c.execute(query, (self.pmid, ))
+                for (annotation_id, err_type, data) in c:
+                    cls = getattr(errors, err_type)
+                    if data is None:
+                        err = cls(annotation_id)
+                    else:
+                        err = cls(annotation_id, data)
+                    self.errors.append(err)
         return True
 
     def _load(self, annot_only=False):
@@ -133,15 +147,17 @@ class Publication:
                            VALUES (%s, %s, %s, %s)"""
                 params = (self.pmid, self.pmc_id, self.timestamp, self.title)
                 c.execute(query, params)
-#                for error in self.errors:
-#publication, annotation, error_type, data
-
-#MissingOrUnknownTypeError(annot['id'])
-#BadFieldDefinitionError(annot_id)
-#DuplicateIDError(annot_id, id)
-#MissingIDError(annot_id)
-#UnknownIDError(entity_id, annot_id)
-
+                query = """INSERT INTO publication_error (publication, 
+                                                          annotation, 
+                                                          error_type, 
+                                                          data) 
+                           VALUES (%s, %s, %s, %s)"""
+                for error in self.errors:
+                    params = (self.pmid, 
+                              error.annotation_id, 
+                              error.__class__.__name__, 
+                              error.data)
+                    c.execute(query, params)
         return
 
     def get_scores(self):
