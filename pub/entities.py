@@ -7,8 +7,6 @@ class Entity(object):
 
     """base class for entities"""
 
-    multi_attrs = ()
-
     def __init__(self, pub, id, values):
         self.pub = pub
         self.id = id
