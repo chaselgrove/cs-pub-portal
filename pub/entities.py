@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from .errors import *
+from . import errors
 from .utils import annot_url
 from .fields import *
 
@@ -24,7 +24,8 @@ class Entity:
             if name in self.fields:
                 self.fields[name].set(value)
             else:
-                self.errors.append(UnknownFieldError(name, annotation_id))
+                err = errors.UnknownFieldError(name)
+                self.errors.append(err)
         return
 
     def __getitem__(self, key):
@@ -106,7 +107,7 @@ class Acquisition(Entity):
         elif ai_id not in self.pub.entities['AcquisitionInstrument']:
             self.acquisition_instrument = None
             msg = 'Undefined acquisition instrument "%s"' % ai_id
-            self.errors.append(LinkError(msg))
+            self.errors.append(errors.LinkError(msg))
         else:
             ai = self.pub.entities['AcquisitionInstrument'][ai_id]
             self.acquisition_instrument = ai
@@ -140,7 +141,8 @@ class Data(Entity):
             self.acquisition = None
         elif a_id not in self.pub.entities['Acquisition']:
             self.acquisition = None
-            self.errors.append(LinkError('Undefined acquisition "%s"' % a_id))
+            err = errors.LinkError('Undefined acquisition "%s"' % a_id)
+            self.errors.append(err)
         else:
             self.acquisition = self.pub.entities['Acquisition'][a_id]
         sg_id = self['subjectgroup']
@@ -148,7 +150,8 @@ class Data(Entity):
             self.subject_group = None
         if sg_id not in self.pub.entities['SubjectGroup']:
             self.subject_group = None
-            self.errors.append(LinkError('Undefined subjectgroup "%s"' % sg_id))
+            err = LinkError('Undefined subjectgroup "%s"' % sg_id)
+            self.errors.append(err)
         else:
             self.subject_group = self.pub.entities['SubjectGroup'][sg_id]
         return
@@ -205,7 +208,7 @@ class Observation(Entity):
             self.analysis_workflow = None
         elif aw_id not in self.pub.entities['AnalysisWorkflow']:
             self.analysis_workflow = None
-            err = LinkError('Undefined analysis workflow "%s"' % aw)
+            err = errors.LinkError('Undefined analysis workflow "%s"' % aw)
             self.errors.append(err)
         else:
             aw = self.pub.entities['AnalysisWorkflow'][aw_id]
@@ -214,7 +217,8 @@ class Observation(Entity):
         if self['data']:
             for d_id in self['data']:
                 if d_id not in self.pub.entities['Data']:
-                    self.errors.append(LinkError('Undefined data "%s"' % d_id))
+                    err = errors.LinkError('Undefined data "%s"' % d_id)
+                    self.errors.append(err)
                 else:
                     d = self.pub.entities['Data'][d_id]
                     self.data.append(d)
@@ -276,14 +280,14 @@ class ModelApplication(Entity):
             self.model = None
         elif m_id not in self.pub.entities['Model']:
             self.model = None
-            self.errors.append(LinkError('Undefined model "%s"' % m_id))
+            self.errors.append(errors.LinkError('Undefined model "%s"' % m_id))
         else:
             self.model = self.pub.entities['Model'][m_id]
         self.observations = []
         if self['observation']:
             for o_id in self['observation']:
                 if o_id not in self.pub.entities['Observation']:
-                    err = LinkError('Undefined observation "%s"' % o_id)
+                    err = errors.LinkError('Undefined observation "%s"' % o_id)
                     self.errors.append(err)
                 else:
                     obs = self.pub.entities['Observation'][o_id]
@@ -318,7 +322,7 @@ class Result(Entity):
             self.model_application = None
         elif ma_id not in self.pub.entities['ModelApplication']:
             self.model_application = None
-            err = LinkError('Undefined model application "%s"' % ma_id)
+            err = errors.LinkError('Undefined model application "%s"' % ma_id)
             self.errors.append(err)
         else:
             ma = self.pub.entities['ModelApplication'][ma_id]

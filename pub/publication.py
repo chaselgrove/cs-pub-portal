@@ -4,6 +4,7 @@ import httplib
 import urllib
 import json
 
+from . import errors
 from .entities import *
 from .exceptions import *
 from .debug import debug
@@ -56,6 +57,8 @@ class Publication:
     def _clear_pmid(cls, pmid):
         with database.connect() as db:
             with db.cursor() as c:
+                query = "DELETE FROM publication_error WHERE publication = %s"
+                c.execute(query, (pmid, ))
                 c.execute("DELETE FROM publication WHERE pmid = %s", (pmid, ))
         return
 
@@ -130,6 +133,15 @@ class Publication:
                            VALUES (%s, %s, %s, %s)"""
                 params = (self.pmid, self.pmc_id, self.timestamp, self.title)
                 c.execute(query, params)
+#                for error in self.errors:
+#publication, annotation, error_type, data
+
+#MissingOrUnknownTypeError(annot['id'])
+#BadFieldDefinitionError(annot_id)
+#DuplicateIDError(annot_id, id)
+#MissingIDError(annot_id)
+#UnknownIDError(entity_id, annot_id)
+
         return
 
     def get_scores(self):
@@ -254,7 +266,8 @@ class Publication:
                     entity_type = et
                     break
             else:
-                self.errors.append(MissingOrUnknownTypeError(annot['id']))
+                err = errors.MissingOrUnknownTypeError(annot['id'])
+                self.errors.append(err)
                 continue
             block_lines = []
             for line in annot['text'].split('\n'):
@@ -292,7 +305,7 @@ class Publication:
                     try:
                         (name, value) = line.split(':', 1)
                     except ValueError:
-                        err = BadFieldDefinitionError(annot_id)
+                        err = errors.BadFieldDefinitionError(annot_id)
                         self.errors.append(err)
                         continue
                     name = name.strip().lower()
@@ -306,7 +319,7 @@ class Publication:
                 if id:
                     d_base.setdefault(entity_type, {})
                     if id in d_base[entity_type]:
-                        err = DuplicateIDError(id, annot_id)
+                        err = errors.DuplicateIDError(annot_id, id)
                         self.errors.append(err)
                     else:
                         d_base[entity_type][id] = fields
@@ -314,7 +327,7 @@ class Publication:
                     d_plus.setdefault(entity_type, {})
                     d_plus[entity_type][plus_id] = fields
                 else:
-                    self.errors.append(MissingIDError(annot_id))
+                    self.errors.append(errors.MissingIDError(annot_id))
 
         # third pass: move d_plus entires into d_base
 
@@ -326,7 +339,7 @@ class Publication:
                     base = d_base[entity_type][entity_id]
                 except KeyError:
                     annot_id = d_plus[entity_type][entity_id][0][0]
-                    err = UnknownIDError(entity_id, annot_id)
+                    err = errors.UnknownIDError(annot_id, entity_id)
                     self.errors.append(err, annot_id)
                 else:
                     base.extend(d_plus[entity_type][entity_id])
