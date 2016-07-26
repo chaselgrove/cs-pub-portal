@@ -7,8 +7,7 @@ CREATE TABLE publication (
 
 CREATE TABLE publication_error (
     id SERIAL PRIMARY KEY, 
-    publication INTEGER NOT NULL 
-    REFERENCES publication, 
+    publication INTEGER NOT NULL REFERENCES publication, 
     annotation TEXT NOT NULL, 
     error_type TEXT NOT NULL, 
     data TEXT DEFAULT NULL
@@ -41,8 +40,7 @@ CREATE TABLE acquisition_instrument (
 
 CREATE TABLE acquisition (
     id TEXT PRIMARY KEY, 
-    acquisition_instrument TEXT DEFAULT NULL 
-    REFERENCES acquisition_instrument, 
+    acquisition_instrument TEXT DEFAULT NULL REFERENCES acquisition_instrument, 
     type TEXT DEFAULT NULL, 
     n_slice TEXT DEFAULT NULL, 
     prep TEXT DEFAULT NULL, 

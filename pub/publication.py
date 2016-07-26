@@ -83,10 +83,14 @@ class Publication:
 
     def _load_from_db(self):
         if self.pmid:
-            query = "SELECT pmid, pmc_id, retrieved, title FROM publication WHERE pmid = %s"
+            query = """SELECT pmid, pmc_id, retrieved, title 
+                         FROM publication 
+                        WHERE pmid = %s"""
             params = (self.pmid, )
         elif self.pmc_id:
-            query = "SELECT pmid, pmc_id, retrieved, title FROM publication WHERE pmc_id = %s"
+            query = """SELECT pmid, pmc_id, retrieved, title 
+                         FROM publication 
+                        WHERE pmc_id = %s"""
             params = (self.pmc_id, )
         else:
             raise ValueError('neither PMID nor PMC ID given to _load_from_db()')
@@ -121,7 +125,11 @@ class Publication:
             return
         with database.connect() as db:
             with db.cursor() as c:
-                c.execute("INSERT INTO publication (pmid, pmc_id, retrieved, title) VALUES (%s, %s, %s, %s)", (self.pmid, self.pmc_id, self.timestamp, self.title))
+                query = """INSERT INTO publication 
+                                       (pmid, pmc_id, retrieved, title) 
+                           VALUES (%s, %s, %s, %s)"""
+                params = (self.pmid, self.pmc_id, self.timestamp, self.title)
+                c.execute(query, params)
         return
 
     def get_scores(self):
