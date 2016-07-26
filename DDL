@@ -140,11 +140,13 @@ CREATE TABLE observationXmodel_application (
 CREATE TABLE result (
     publication TEXT REFERENCES publication, 
     id TEXT, 
+    model_application TEXT, 
     value TEXT DEFAULT NULL, 
     f TEXT DEFAULT NULL, 
     p TEXT DEFAULT NULL, 
     interpretation TEXT DEFAULT NULL, 
-    PRIMARY KEY (publication, id)
+    PRIMARY KEY (publication, id), 
+    FOREIGN KEY (publication, model_application) REFERENCES model_application
 );
 
 CREATE TABLE result_variable (
