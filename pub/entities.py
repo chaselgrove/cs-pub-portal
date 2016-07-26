@@ -3,7 +3,7 @@ from . import errors
 from .utils import annot_url
 from .fields import *
 
-class Entity:
+class Entity(object):
 
     """base class for entities"""
 
@@ -30,6 +30,12 @@ class Entity:
 
     def __getitem__(self, key):
         return self.fields[key].value
+
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = "DELETE FROM %s WHERE publication = %%s" % cls.table
+        cursor.execute(query, (pmid, ))
+        return
 
     def set_related(self):
         """set related entities"""
@@ -58,6 +64,8 @@ class SubjectGroup(Entity):
                   ('agemean', Field, 'Age mean'), 
                   ('agesd', Field, 'Age SD'))
 
+    table = 'subject_group'
+
     def score(self):
         self.points.append((5, 'Existential credit'))
         # check for missing fields
@@ -73,6 +81,8 @@ class AcquisitionInstrument(Entity):
                   ('field', Field, 'Field'), 
                   ('manufacturer', Field, 'Manufacturer'), 
                   ('model', Field, 'Model'))
+
+    table = 'acquisition_instrument'
 
     def score(self):
         self.points.append((7, 'Existential credit'))
@@ -99,6 +109,8 @@ class Acquisition(Entity):
                   ('slicethickness', Field, 'Slice Thickness'), 
                   ('matrix', Field, 'Matrix'), 
                   ('nexcitations', Field, 'N Excitations'))
+
+    table = 'acquisition'
 
     def set_related(self):
         ai_id = self['acquisitioninstrument']
@@ -129,10 +141,19 @@ class Data(Entity):
                   ('acquisition', Field, 'Acquisition'), 
                   ('subjectgroup', Field, 'Subject Group'))
 
+    table = 'data'
+
     def __init__(self, pub, id, values):
         Entity.__init__(self, pub, id, values)
         # set in Observation.set_related()
         self.observations = []
+        return
+
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = "DELETE FROM dataXobservation WHERE publication = %s"
+        cursor.execute(query, (pmid, ))
+        super(Data, cls)._clear_pmid(pmid, cursor)
         return
 
     def set_related(self):
@@ -175,6 +196,8 @@ class AnalysisWorkflow(Entity):
                   ('softwarerrid', RRIDField, 'Software RRID'), 
                   ('softwareurl', URLField, 'Software URL'))
 
+    table = 'analysis_workflow'
+
     def score(self):
         self.points.append((7, 'Existential credit'))
         if not self['method']:
@@ -195,12 +218,23 @@ class Observation(Entity):
                   ('analysisworkflow', Field, 'Analysis Workflow'), 
                   ('measure', Field, 'Measure'))
 
+    table = 'observation'
+
     def __init__(self, pub, id, values):
         Entity.__init__(self, pub, id, values)
         # set in ModelApplication.set_related()
         self.model_applications = []
         return
 
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = "DELETE FROM dataXobservation WHERE publication = %s"
+        cursor.execute(query, (pmid, ))
+        query = """DELETE FROM observationXmodel_application 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pmid, ))
+        super(Observation, cls)._clear_pmid(pmid, cursor)
+        return
 
     def set_related(self):
         aw_id = self['analysisworkflow']
@@ -240,6 +274,15 @@ class Model(Entity):
     field_defs = (('type', Field, 'Type'), 
                   ('variable', MultiField, 'Variables'))
 
+    table = 'model'
+
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = "DELETE FROM model_variable WHERE publication = %s"
+        cursor.execute(query, (pmid, ))
+        super(Model, cls)._clear_pmid(pmid, cursor)
+        return
+
     def score(self):
         self.points.append((10, 'Existential credit'))
         # check if any variables are defined
@@ -273,6 +316,16 @@ class ModelApplication(Entity):
                   ('model', Field, 'Model'), 
                   ('url', URLField, 'URL'), 
                   ('software', Field, 'Software'))
+
+    table = 'model_application'
+
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = """DELETE FROM observationXmodel_application 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pmid, ))
+        super(ModelApplication, cls)._clear_pmid(pmid, cursor)
+        return
 
     def set_related(self):
         m_id = self['model']
@@ -315,6 +368,15 @@ class Result(Entity):
                   ('f', Field, 'f'), 
                   ('p', Field, 'p'), 
                   ('interpretation', Field, 'Interpretation'))
+
+    table = 'result'
+
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = "DELETE FROM result_variable WHERE publication = %s"
+        cursor.execute(query, (pmid, ))
+        super(Result, cls)._clear_pmid(pmid, cursor)
+        return
 
     def set_related(self):
         ma_id = self['modelapplication']
