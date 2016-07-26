@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import re
 import datetime
 import httplib
@@ -59,7 +60,9 @@ class Publication:
             with db.cursor() as c:
                 query = "DELETE FROM entity_error WHERE publication = %s"
                 c.execute(query, (pmid, ))
-                for cls in entities.itervalues():
+                classes = entities.values()
+                classes.reverse()
+                for cls in classes:
                     cls._clear_pmid(pmid, c)
                 query = "DELETE FROM publication_error WHERE publication = %s"
                 c.execute(query, (pmid, ))
@@ -83,7 +86,10 @@ class Publication:
         self.pmc_id = None
         self.title = None
         self.errors = []
-        self.entities = {}
+        # since we iterate over this to insert entities in the database and 
+        # we need foreign keys in place, so order is important; the order 
+        # comes from entities.entities
+        self.entities = OrderedDict()
         for et in entities:
             self.entities[et] = {}
         return

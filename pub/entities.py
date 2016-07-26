@@ -35,7 +35,7 @@ class Entity(object):
         cursor.execute(query, (pmid, ))
         return
 
-    def _insert(self, cursor):
+    def _insert_errors(self, cursor):
         query = """INSERT INTO entity_error (publication, 
                                              entity_type, 
                                              entity_id, 
@@ -80,6 +80,26 @@ class SubjectGroup(Entity):
 
     table = 'subject_group'
 
+    def _insert(self, cursor):
+        query = """INSERT INTO subject_group (publication, 
+                                              id, 
+                                              diagnosis, 
+                                              n_subjects, 
+                                              age_mean, 
+                                              age_sd)
+                   VALUES (%s, %s, %s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self['diagnosis'], 
+                  self['nsubjects'], 
+                  self['agemean'], 
+                  self['agesd'])
+        cursor.execute(query, params)
+        self._insert_errors(cursor)
+        return
+
+
+
     def score(self):
         self.points.append((5, 'Existential credit'))
         # check for missing fields
@@ -98,6 +118,26 @@ class AcquisitionInstrument(Entity):
 
     table = 'acquisition_instrument'
 
+    def _insert(self, cursor):
+        query = """INSERT INTO acquisition_instrument (publication, 
+                                                       id, 
+                                                       type, 
+                                                       location, 
+                                                       field, 
+                                                       manufacturer, 
+                                                       model)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self['type'], 
+                  self['location'], 
+                  self['field'], 
+                  self['manufacturer'], 
+                  self['model'])
+        cursor.execute(query, params)
+        self._insert_errors(cursor)
+        return
+
     def score(self):
         self.points.append((7, 'Existential credit'))
         # check for missing fields
@@ -113,7 +153,7 @@ class Acquisition(Entity):
 
     field_defs = (('type', Field, 'Type'), 
                   ('acquisitioninstrument', Field, 'Acquisition Instrument'), 
-                  ('NSlices', Field, 'N Slices'), 
+                  ('nslices', Field, 'N Slices'), 
                   ('prep', Field, 'Prep'), 
                   ('tr', Field, 'TE'), 
                   ('te', Field, 'TR'), 
@@ -125,6 +165,41 @@ class Acquisition(Entity):
                   ('nexcitations', Field, 'N Excitations'))
 
     table = 'acquisition'
+
+    def _insert(self, cursor):
+        query = """INSERT INTO acquisition (publication, 
+                                            id, 
+                                            acquisition_instrument, 
+                                            type, 
+                                            n_slice, 
+                                            prep, 
+                                            tr, 
+                                            te, 
+                                            ti, 
+                                            flip_angle, 
+                                            fov, 
+                                            slice_thickness, 
+                                            matrix, 
+                                            n_excitations)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, 
+                           %s, %s, %s, %s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self['acquisitioninstrument'], 
+                  self['type'], 
+                  self['nslices'], 
+                  self['prep'], 
+                  self['tr'], 
+                  self['te'], 
+                  self['ti'], 
+                  self['flipangle'], 
+                  self['fov'], 
+                  self['slicethickness'], 
+                  self['matrix'], 
+                  self['nexcitations'])
+        cursor.execute(query, params)
+        self._insert_errors(cursor)
+        return
 
     def set_related(self):
         ai_id = self['acquisitioninstrument']
@@ -170,6 +245,24 @@ class Data(Entity):
         super(Data, cls)._clear_pmid(pmid, cursor)
         return
 
+    def _insert(self, cursor):
+        query = """INSERT INTO data (publication, 
+                                     id, 
+                                     acquisition, 
+                                     subject_group, 
+                                     url, 
+                                     doi)
+                   VALUES (%s, %s, %s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self.acquisition.id, 
+                  self.subject_group.id, 
+                  self['url'], 
+                  self['doi'])
+        cursor.execute(query, params)
+        self._insert_errors(cursor)
+        return
+
     def set_related(self):
         a_id = self['acquisition']
         if a_id is None:
@@ -212,6 +305,28 @@ class AnalysisWorkflow(Entity):
 
     table = 'analysis_workflow'
 
+    def _insert(self, cursor):
+        query = """INSERT INTO analysis_workflow (publication, 
+                                                  id, 
+                                                  method, 
+                                                  methodurl, 
+                                                  software, 
+                                                  software_nitrc_id, 
+                                                  software_rrid, 
+                                                  software_url)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self['method'], 
+                  self['methodurl'], 
+                  self['software'], 
+                  self['softwarenitrcid'], 
+                  self['softwarerrid'], 
+                  self['softwareurl'])
+        cursor.execute(query, params)
+        self._insert_errors(cursor)
+        return
+
     def score(self):
         self.points.append((7, 'Existential credit'))
         if not self['method']:
@@ -238,6 +353,27 @@ class Observation(Entity):
         Entity.__init__(self, pub, id, values)
         # set in ModelApplication.set_related()
         self.model_applications = []
+        return
+
+    def _insert(self, cursor):
+        query = """INSERT INTO observation (publication, 
+                                            id, 
+                                            analysis_workflow, 
+                                            measure) 
+                   VALUES (%s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self['analysisworkflow'], 
+                  self['measure'])
+        cursor.execute(query, params)
+        query = """INSERT INTO dataXobservation (publication, 
+                                                 data, 
+                                                 observation) 
+                   VALUES (%s, %s, %s)"""
+        for data in self.data:
+            params = (self.pub.pmid, data.id, self.id)
+            cursor.execute(query, params)
+        self._insert_errors(cursor)
         return
 
     @classmethod
@@ -297,6 +433,21 @@ class Model(Entity):
         super(Model, cls)._clear_pmid(pmid, cursor)
         return
 
+    def _insert(self, cursor):
+        query = "INSERT INTO model (publication, id, type) VALUES (%s, %s, %s)"
+        params = (self.pub.pmid, self.id, self['type'])
+        cursor.execute(query, params)
+        if self['variable'] is not None:
+            query = """INSERT INTO model_variable (publication, 
+                                                   model, 
+                                                   variable) 
+                       VALUES (%s, %s, %s)"""
+            for val in self['variable']:
+                params = (self.pub.pmid, self.id, val)
+                cursor.execute(query, params)
+        self._insert_errors(cursor)
+        return
+
     def score(self):
         self.points.append((10, 'Existential credit'))
         # check if any variables are defined
@@ -339,6 +490,26 @@ class ModelApplication(Entity):
                     WHERE publication = %s"""
         cursor.execute(query, (pmid, ))
         super(ModelApplication, cls)._clear_pmid(pmid, cursor)
+        return
+
+    def _insert(self, cursor):
+        query = """INSERT INTO model_application (publication, 
+                                                  id, 
+                                                  url, 
+                                                  software)
+                   VALUES (%s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self['url'], 
+                  self['software'])
+        cursor.execute(query, params)
+        query = """INSERT INTO observationXmodel_application 
+                               (publication, observation, model_application) 
+                   VALUES (%s, %s, %s)"""
+        for obs in self.observations:
+            params = (self.pub.pmid, obs.id, self.id)
+            cursor.execute(query, params)
+        self._insert_errors(cursor)
         return
 
     def set_related(self):
@@ -392,6 +563,34 @@ class Result(Entity):
         super(Result, cls)._clear_pmid(pmid, cursor)
         return
 
+    def _insert(self, cursor):
+        query = """INSERT INTO result (publication, 
+                                       id, 
+                                       model_application, 
+                                       value, 
+                                       f, 
+                                       p, 
+                                       interpretation) 
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        params = (self.pub.pmid, 
+                  self.id, 
+                  self['modelapplication'], 
+                  self['value'], 
+                  self['f'], 
+                  self['p'], 
+                  self['interpretation'])
+        cursor.execute(query, params)
+        if self['variable'] is not None:
+            query = """INSERT INTO result_variable (publication, 
+                                                    result, 
+                                                    variable) 
+                       VALUES (%s, %s, %s)"""
+            for val in self['variable']:
+                params = (self.pub.pmid, self.id, val)
+                cursor.execute(query, params)
+        self._insert_errors(cursor)
+        return
+
     def set_related(self):
         ma_id = self['modelapplication']
         if ma_id is None:
@@ -434,14 +633,17 @@ class Result(Entity):
         return
 
 # entities[markup entity type] = entity class
-entities = {'SubjectGroup': SubjectGroup, 
-            'AcquisitionInstrument': AcquisitionInstrument, 
-            'Acquisition': Acquisition, 
-            'Data': Data, 
-            'AnalysisWorkflow': AnalysisWorkflow, 
-            'Observation': Observation, 
-            'Model': Model, 
-            'ModelApplication': ModelApplication, 
-            'Result': Result}
+# this order propagates to Publication.entities, whose order is used to put 
+# the entities in the database
+entities = OrderedDict()
+entities['SubjectGroup'] = SubjectGroup
+entities['AcquisitionInstrument'] = AcquisitionInstrument
+entities['Acquisition'] = Acquisition
+entities['Data'] = Data
+entities['AnalysisWorkflow'] = AnalysisWorkflow
+entities['Observation'] = Observation
+entities['Model'] = Model
+entities['ModelApplication'] = ModelApplication
+entities['Result'] = Result
 
 # eof
