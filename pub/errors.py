@@ -93,7 +93,7 @@ class LinkError(BaseEntityError):
 
     def __init__(self, msg):
         BaseEntityError.__init__(self)
-        self.data = None
+        self.data = msg
         self.msg = msg
         return
 

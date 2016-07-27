@@ -7,7 +7,25 @@ class Entity(object):
 
     """base class for entities"""
 
-    def __init__(self, pub, id, values):
+    @classmethod
+    def _get_from_def(cls, pub, id, values):
+        obj = cls(pub, id)
+        for (annotation_id, name, value) in values:
+            obj.annotation_ids.add(annotation_id)
+            if name in obj.fields:
+                obj.fields[name].set(value)
+            else:
+                err = errors.UnknownFieldError(name)
+                obj.errors.append(err)
+        return obj
+
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = "DELETE FROM %s WHERE publication = %%s" % cls.table
+        cursor.execute(query, (pmid, ))
+        return
+
+    def __init__(self, pub, id):
         self.pub = pub
         self.id = id
         self.annotation_ids = set()
@@ -17,23 +35,10 @@ class Entity(object):
         self.fields = OrderedDict()
         for (key, cls, display_name) in self.field_defs:
             self.fields[key] = cls(display_name)
-        for (annotation_id, name, value) in values:
-            self.annotation_ids.add(annotation_id)
-            if name in self.fields:
-                self.fields[name].set(value)
-            else:
-                err = errors.UnknownFieldError(name)
-                self.errors.append(err)
         return
 
     def __getitem__(self, key):
         return self.fields[key].value
-
-    @classmethod
-    def _clear_pmid(cls, pmid, cursor):
-        query = "DELETE FROM %s WHERE publication = %%s" % cls.table
-        cursor.execute(query, (pmid, ))
-        return
 
     def _insert_errors(self, cursor):
         query = """INSERT INTO entity_error (publication, 
@@ -49,6 +54,19 @@ class Entity(object):
                       error.__class__.__name__, 
                       error.data)
             cursor.execute(query, params)
+        return
+
+    def _set_errors_from_db(self, pub, cursor):
+        query = """SELECT error_type, data 
+                     FROM entity_error 
+                    WHERE publication = %s 
+                      AND entity_type = %s 
+                      AND entity_id = %s"""
+        cursor.execute(query, (pub.pmid, self.table, self.id))
+        for (error_type, data) in cursor:
+            cls = getattr(errors, error_type)
+            err = cls(data)
+            self.errors.append(err)
         return
 
     def set_related(self):
@@ -80,6 +98,25 @@ class SubjectGroup(Entity):
 
     table = 'subject_group'
 
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT id, diagnosis, n_subjects, age_mean, age_sd 
+                     FROM subject_group 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = SubjectGroup(pub, row_dict['id'])
+            obj.fields['diagnosis'].set(row_dict['diagnosis'])
+            obj.fields['nsubjects'].set(row_dict['n_subjects'])
+            obj.fields['agemean'].set(row_dict['age_mean'])
+            obj.fields['agesd'].set(row_dict['age_sd'])
+            obj._set_errors_from_db(pub, cursor)
+            d[row_dict['id']] = obj
+        return d
+
     def _insert(self, cursor):
         query = """INSERT INTO subject_group (publication, 
                                               id, 
@@ -97,8 +134,6 @@ class SubjectGroup(Entity):
         cursor.execute(query, params)
         self._insert_errors(cursor)
         return
-
-
 
     def score(self):
         self.points.append((5, 'Existential credit'))
@@ -232,17 +267,17 @@ class Data(Entity):
 
     table = 'data'
 
-    def __init__(self, pub, id, values):
-        Entity.__init__(self, pub, id, values)
-        # set in Observation.set_related()
-        self.observations = []
-        return
-
     @classmethod
     def _clear_pmid(cls, pmid, cursor):
         query = "DELETE FROM dataXobservation WHERE publication = %s"
         cursor.execute(query, (pmid, ))
         super(Data, cls)._clear_pmid(pmid, cursor)
+        return
+
+    def __init__(self, pub, id):
+        super(Data, self).__init__(pub, id)
+        # set in Observation.set_related()
+        self.observations = []
         return
 
     def _insert(self, cursor):
@@ -349,8 +384,18 @@ class Observation(Entity):
 
     table = 'observation'
 
-    def __init__(self, pub, id, values):
-        Entity.__init__(self, pub, id, values)
+    @classmethod
+    def _clear_pmid(cls, pmid, cursor):
+        query = "DELETE FROM dataXobservation WHERE publication = %s"
+        cursor.execute(query, (pmid, ))
+        query = """DELETE FROM observationXmodel_application 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pmid, ))
+        super(Observation, cls)._clear_pmid(pmid, cursor)
+        return
+
+    def __init__(self, pub, id):
+        super(Observation, self).__init__(pub, id)
         # set in ModelApplication.set_related()
         self.model_applications = []
         return
@@ -374,16 +419,6 @@ class Observation(Entity):
             params = (self.pub.pmid, data.id, self.id)
             cursor.execute(query, params)
         self._insert_errors(cursor)
-        return
-
-    @classmethod
-    def _clear_pmid(cls, pmid, cursor):
-        query = "DELETE FROM dataXobservation WHERE publication = %s"
-        cursor.execute(query, (pmid, ))
-        query = """DELETE FROM observationXmodel_application 
-                    WHERE publication = %s"""
-        cursor.execute(query, (pmid, ))
-        super(Observation, cls)._clear_pmid(pmid, cursor)
         return
 
     def set_related(self):

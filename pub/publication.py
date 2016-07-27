@@ -117,7 +117,26 @@ class Publication:
         self.pmc_id = row[1]
         self.timestamp = row[2]
         self.title = row[3]
+
         self._load(annot_only=True)
+
+        with database.connect() as db:
+            with db.cursor() as c:
+                for (entity_type, cls) in entities.iteritems():
+                    if entity_type != 'SubjectGroup':
+                        continue
+                    self.entities[entity_type] = cls._get_from_db(self, c)
+        for et in self.entities:
+            if et != 'SubjectGroup':
+                continue
+            for ent in self.entities[et].itervalues():
+                ent.set_related()
+        for et in self.entities:
+            if et != 'SubjectGroup':
+                continue
+            for ent in self.entities[et].itervalues():
+                ent.score()
+
         self.errors = []
         with database.connect() as db:
             with db.cursor() as c:
@@ -379,7 +398,9 @@ class Publication:
         for entity_type in d_base:
             for entity_id in d_base[entity_type]:
                 cls = entities[entity_type]
-                ent = cls(self, entity_id, d_base[entity_type][entity_id])
+                ent = cls._get_from_def(self, 
+                                        entity_id, 
+                                        d_base[entity_type][entity_id])
                 self.entities[entity_type][ent.id] = ent
 
         return
