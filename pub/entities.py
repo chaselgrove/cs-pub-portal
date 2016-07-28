@@ -527,7 +527,7 @@ class Observation(Entity):
             aw = None
         params = (self.pub.pmid, 
                   self.id, 
-                  None, 
+                  aw, 
                   self['measure'])
         cursor.execute(query, params)
         query = """INSERT INTO dataXobservation (publication, 
@@ -661,6 +661,25 @@ class ModelApplication(Entity):
     table = 'model_application'
 
     @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM model_application 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = ModelApplication(pub, row_dict['id'])
+            obj.fields['observation'].set(row_dict['observation'])
+            obj.fields['model'].set(row_dict['model'])
+            obj.fields['url'].set(row_dict['url'])
+            obj.fields['software'].set(row_dict['software'])
+            d[row_dict['id']] = obj
+        ModelApplication._get_annotation_ids_from_db(pub, d, cursor)
+        return d
+
+    @classmethod
     def _clear_pmid(cls, pmid, cursor):
         query = """DELETE FROM observationXmodel_application 
                     WHERE publication = %s"""
@@ -737,6 +756,33 @@ class Result(Entity):
                   ('interpretation', Field, 'Interpretation'))
 
     table = 'result'
+
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM result 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = Result(pub, row_dict['id'])
+            obj.fields['modelapplication'].set(row_dict['model_application'])
+            obj.fields['value'].set(row_dict['value'])
+            obj.fields['variable'].set(row_dict['variable'])
+            obj.fields['f'].set(row_dict['f'])
+            obj.fields['p'].set(row_dict['p'])
+            obj.fields['interpretation'].set(row_dict['interpretation'])
+            d[row_dict['id']] = obj
+        query = """SELECT result, variable 
+                     FROM result_variable 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        for (result_id, variable) in cursor:
+            d[result_id].fields['variable'].set(variable)
+        Result._get_annotation_ids_from_db(pub, d, cursor)
+        return d
 
     @classmethod
     def _clear_pmid(cls, pmid, cursor):
