@@ -91,8 +91,6 @@ class LinkError(BaseEntityError):
 
     """inter-entity link error"""
 
-    db_error = False
-
     def __init__(self, msg):
         BaseEntityError.__init__(self)
         self.data = msg
@@ -102,8 +100,6 @@ class LinkError(BaseEntityError):
 class UnknownFieldError(BaseEntityError):
 
     """unknown field in entity definition"""
-
-    db_error = True
 
     def __init__(self, name):
         BaseEntityError.__init__(self)
