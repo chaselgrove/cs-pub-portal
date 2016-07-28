@@ -54,6 +54,22 @@ class Entity(object):
             cursor.execute(query, params)
         return
 
+    def _insert_errors(self, cursor):
+        query = """INSERT INTO entity_error (publication, 
+                                             entity_type, 
+                                             entity_id, 
+                                             error_type, 
+                                             data) 
+                     VALUES (%s, %s, %s, %s, %s)"""
+        for error in self.errors:
+            params = (self.pub.pmid, 
+                      self.table, 
+                      self.id, 
+                      error.__class__.__name__, 
+                      error.data)
+            cursor.execute(query, params)
+        return
+
     @classmethod
     def _get_annotation_ids_from_db(cls, pub, d, cursor):
         query = """SELECT entity_id, annotation_id 
@@ -63,6 +79,19 @@ class Entity(object):
         cursor.execute(query, (pub.pmid, cls.table))
         for (entity_id, annotation_id) in cursor:
             d[entity_id].annotation_ids.add(annotation_id)
+        return
+
+    @classmethod
+    def _get_errors_from_db(cls, pub, d, cursor):
+        query = """SELECT entity_id, error_type, data 
+                     FROM entity_error 
+                    WHERE publication = %s 
+                      AND entity_type = %s"""
+        cursor.execute(query, (pub.pmid, cls.table))
+        for (entity_id, error_type, data) in cursor:
+            cls = getattr(errors, error_type)
+            err = cls(data)
+            d[entity_id].errors.append(err)
         return
 
     def set_related(self):
@@ -111,6 +140,7 @@ class SubjectGroup(Entity):
             obj.fields['agesd'].set(row_dict['age_sd'])
             d[row_dict['id']] = obj
         SubjectGroup._get_annotation_ids_from_db(pub, d, cursor)
+        SubjectGroup._get_errors_from_db(pub, d, cursor)
         return d
 
     def _insert(self, cursor):
@@ -129,6 +159,7 @@ class SubjectGroup(Entity):
                   self['agesd'])
         cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def score(self):
@@ -167,6 +198,7 @@ class AcquisitionInstrument(Entity):
             obj.fields['model'].set(row_dict['model'])
             d[row_dict['id']] = obj
         AcquisitionInstrument._get_annotation_ids_from_db(pub, d, cursor)
+        AcquisitionInstrument._get_errors_from_db(pub, d, cursor)
         return d
 
     def _insert(self, cursor):
@@ -187,6 +219,7 @@ class AcquisitionInstrument(Entity):
                   self['model'])
         cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def score(self):
@@ -243,6 +276,7 @@ class Acquisition(Entity):
             obj.fields['nexcitations'].set(row_dict['n_excitations'])
             d[row_dict['id']] = obj
         Acquisition._get_annotation_ids_from_db(pub, d, cursor)
+        Acquisition._get_errors_from_db(pub, d, cursor)
         return d
 
     def _insert(self, cursor):
@@ -282,6 +316,7 @@ class Acquisition(Entity):
                   self['nexcitations'])
         cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def set_related(self):
@@ -332,6 +367,7 @@ class Data(Entity):
             obj.fields['subjectgroup'].set(row_dict['subject_group'])
             d[row_dict['id']] = obj
         Data._get_annotation_ids_from_db(pub, d, cursor)
+        Data._get_errors_from_db(pub, d, cursor)
         return d
 
     @classmethod
@@ -367,6 +403,7 @@ class Data(Entity):
                   self['doi'])
         cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def set_related(self):
@@ -430,6 +467,7 @@ class AnalysisWorkflow(Entity):
             obj.fields['softwareurl'].set(row_dict['software_url'])
             d[row_dict['id']] = obj
         AnalysisWorkflow._get_annotation_ids_from_db(pub, d, cursor)
+        AnalysisWorkflow._get_errors_from_db(pub, d, cursor)
         return d
 
     def _insert(self, cursor):
@@ -452,6 +490,7 @@ class AnalysisWorkflow(Entity):
                   self['softwareurl'])
         cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def score(self):
@@ -497,6 +536,7 @@ class Observation(Entity):
         for (observation_id, data_id) in cursor:
             d[observation_id].fields['data'].set(data_id)
         Observation._get_annotation_ids_from_db(pub, d, cursor)
+        Observation._get_errors_from_db(pub, d, cursor)
         return d
 
     @classmethod
@@ -538,6 +578,7 @@ class Observation(Entity):
             params = (self.pub.pmid, data.id, self.id)
             cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def set_related(self):
@@ -600,6 +641,7 @@ class Model(Entity):
         for (model_id, variable) in cursor:
             d[model_id].fields['variable'].set(variable)
         Model._get_annotation_ids_from_db(pub, d, cursor)
+        Model._get_errors_from_db(pub, d, cursor)
         return d
 
     @classmethod
@@ -622,6 +664,7 @@ class Model(Entity):
                 params = (self.pub.pmid, self.id, val)
                 cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def score(self):
@@ -677,6 +720,7 @@ class ModelApplication(Entity):
             obj.fields['software'].set(row_dict['software'])
             d[row_dict['id']] = obj
         ModelApplication._get_annotation_ids_from_db(pub, d, cursor)
+        ModelApplication._get_errors_from_db(pub, d, cursor)
         return d
 
     @classmethod
@@ -711,6 +755,7 @@ class ModelApplication(Entity):
             params = (self.pub.pmid, obs.id, self.id)
             cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def set_related(self):
@@ -782,6 +827,7 @@ class Result(Entity):
         for (result_id, variable) in cursor:
             d[result_id].fields['variable'].set(variable)
         Result._get_annotation_ids_from_db(pub, d, cursor)
+        Result._get_errors_from_db(pub, d, cursor)
         return d
 
     @classmethod
@@ -821,6 +867,7 @@ class Result(Entity):
                 params = (self.pub.pmid, self.id, val)
                 cursor.execute(query, params)
         self._insert_annotations(cursor)
+        self._insert_errors(cursor)
         return
 
     def set_related(self):
