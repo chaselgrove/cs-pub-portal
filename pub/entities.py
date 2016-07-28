@@ -62,6 +62,8 @@ class Entity(object):
                                              data) 
                      VALUES (%s, %s, %s, %s, %s)"""
         for error in self.errors:
+            if not error.db_error:
+                continue
             params = (self.pub.pmid, 
                       self.table, 
                       self.id, 
