@@ -119,9 +119,6 @@ class Publication:
         self.pmc_id = row[1]
         self.timestamp = row[2]
         self.title = row[3]
-
-        self._load(annot_only=True)
-
         with database.connect() as db:
             with db.cursor() as c:
                 for (entity_type, cls) in entities.iteritems():
@@ -132,7 +129,6 @@ class Publication:
         for et in self.entities:
             for ent in self.entities[et].itervalues():
                 ent.score()
-
         self.errors = []
         with database.connect() as db:
             with db.cursor() as c:
@@ -149,11 +145,10 @@ class Publication:
                     self.errors.append(err)
         return True
 
-    def _load(self, annot_only=False):
+    def _load(self):
         """load information from pubmed and hypothesis"""
-        if not annot_only:
-            self._read_pubmed()
-            self.timestamp = datetime.datetime.utcnow()
+        self._read_pubmed()
+        self.timestamp = datetime.datetime.utcnow()
         self._read_annotations()
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
@@ -163,8 +158,6 @@ class Publication:
         for ed in self.entities.itervalues():
             for ent in ed.itervalues():
                 ent.score()
-        if annot_only:
-            return
         with database.connect() as db:
             with db.cursor() as c:
                 query = """INSERT INTO publication 
