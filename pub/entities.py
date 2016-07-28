@@ -56,17 +56,17 @@ class Entity(object):
             cursor.execute(query, params)
         return
 
-    def _set_errors_from_db(self, pub, cursor):
-        query = """SELECT error_type, data 
+    @classmethod
+    def _set_errors_from_db(cls, pub, d, cursor):
+        query = """SELECT entity_id, error_type, data 
                      FROM entity_error 
                     WHERE publication = %s 
-                      AND entity_type = %s 
-                      AND entity_id = %s"""
-        cursor.execute(query, (pub.pmid, self.table, self.id))
-        for (error_type, data) in cursor:
+                      AND entity_type = %s"""
+        cursor.execute(query, (pub.pmid, cls.table))
+        for (entity_id, error_type, data) in cursor:
             cls = getattr(errors, error_type)
             err = cls(data)
-            self.errors.append(err)
+            d[entity_id].errors.append(err)
         return
 
     def set_related(self):
@@ -113,8 +113,8 @@ class SubjectGroup(Entity):
             obj.fields['nsubjects'].set(row_dict['n_subjects'])
             obj.fields['agemean'].set(row_dict['age_mean'])
             obj.fields['agesd'].set(row_dict['age_sd'])
-            obj._set_errors_from_db(pub, cursor)
             d[row_dict['id']] = obj
+        SubjectGroup._set_errors_from_db(pub, d, cursor)
         return d
 
     def _insert(self, cursor):
