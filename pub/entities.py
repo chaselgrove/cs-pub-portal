@@ -262,9 +262,13 @@ class Acquisition(Entity):
                                             n_excitations)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, 
                            %s, %s, %s, %s, %s, %s, %s)"""
+        if self.acquisition_instrument:
+            ai = self.acquisition_instrument.id
+        else:
+            ai = None
         params = (self.pub.pmid, 
                   self.id, 
-                  self['acquisitioninstrument'], 
+                  ai, 
                   self['type'], 
                   self['nslices'], 
                   self['prep'], 
@@ -351,9 +355,13 @@ class Data(Entity):
                                      url, 
                                      doi)
                    VALUES (%s, %s, %s, %s, %s, %s)"""
+        if self.acquisition:
+            aquisition = self.acquisition.id
+        else:
+            aquisition = None
         params = (self.pub.pmid, 
                   self.id, 
-                  self.acquisition.id, 
+                  aquisition, 
                   self.subject_group.id, 
                   self['url'], 
                   self['doi'])
@@ -513,9 +521,13 @@ class Observation(Entity):
                                             analysis_workflow, 
                                             measure) 
                    VALUES (%s, %s, %s, %s)"""
+        if self.analysis_workflow:
+            aw = self.analysis_workflow.id
+        else:
+            aw = None
         params = (self.pub.pmid, 
                   self.id, 
-                  self['analysisworkflow'], 
+                  None, 
                   self['measure'])
         cursor.execute(query, params)
         query = """INSERT INTO dataXobservation (publication, 
@@ -659,11 +671,17 @@ class ModelApplication(Entity):
     def _insert(self, cursor):
         query = """INSERT INTO model_application (publication, 
                                                   id, 
+                                                  model, 
                                                   url, 
                                                   software)
-                   VALUES (%s, %s, %s, %s)"""
+                   VALUES (%s, %s, %s, %s, %s)"""
+        if self.model:
+            model = self.model.id
+        else:
+            model = None
         params = (self.pub.pmid, 
                   self.id, 
+                  model, 
                   self['url'], 
                   self['software'])
         cursor.execute(query, params)
@@ -736,9 +754,13 @@ class Result(Entity):
                                        p, 
                                        interpretation) 
                    VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        if self.model_application:
+            ma = self.model_application.id
+        else:
+            ma = None
         params = (self.pub.pmid, 
                   self.id, 
-                  self['modelapplication'], 
+                  ma, 
                   self['value'], 
                   self['f'], 
                   self['p'], 

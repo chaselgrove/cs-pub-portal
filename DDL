@@ -122,9 +122,11 @@ CREATE TABLE model_variable (
 CREATE TABLE model_application (
     publication TEXT REFERENCES publication, 
     id TEXT, 
+    model TEXT DEFAULT NULL, 
     url TEXT DEFAULT NULL, 
     software TEXT DEFAULT NULL, 
-    PRIMARY KEY (publication, id)
+    PRIMARY KEY (publication, id), 
+    FOREIGN KEY (publication, model) REFERENCES model
 );
 
 CREATE TABLE observationXmodel_application (
