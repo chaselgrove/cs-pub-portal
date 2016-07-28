@@ -22,6 +22,14 @@ CREATE TABLE entity_error (
     data TEXT DEFAULT NULL
 );
 
+CREATE TABLE entity_annotation (
+    id SERIAL PRIMARY KEY, 
+    publication TEXT NOT NULL REFERENCES publication, 
+    entity_type TEXT NOT NULL, 
+    entity_id TEXT NOT NULL, 
+    annotation_id TEXT NOT NULL
+);
+
 CREATE TABLE subject_group (
     publication TEXT REFERENCES publication, 
     id TEXT, 

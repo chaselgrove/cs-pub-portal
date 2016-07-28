@@ -60,6 +60,8 @@ class Publication:
             with db.cursor() as c:
                 query = "DELETE FROM entity_error WHERE publication = %s"
                 c.execute(query, (pmid, ))
+                query = "DELETE FROM entity_annotation WHERE publication = %s"
+                c.execute(query, (pmid, ))
                 classes = entities.values()
                 classes.reverse()
                 for cls in classes:
