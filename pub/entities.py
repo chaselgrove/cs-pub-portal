@@ -324,6 +324,7 @@ class Acquisition(Entity):
         if ai_id is None:
             self.acquisition_instrument = None
         elif ai_id not in self.pub.entities['AcquisitionInstrument']:
+            self.fields['acquisitioninstrument'].reset()
             self.acquisition_instrument = None
             msg = 'Undefined acquisition instrument "%s"' % ai_id
             self.errors.append(errors.LinkError(msg))
@@ -411,6 +412,7 @@ class Data(Entity):
         if a_id is None:
             self.acquisition = None
         elif a_id not in self.pub.entities['Acquisition']:
+            self.fields['acquisition'].reset()
             self.acquisition = None
             err = errors.LinkError('Undefined acquisition "%s"' % a_id)
             self.errors.append(err)
@@ -420,6 +422,7 @@ class Data(Entity):
         if sg_id is None:
             self.subject_group = None
         if sg_id not in self.pub.entities['SubjectGroup']:
+            self.fields['subjectgroup'].reset()
             self.subject_group = None
             err = LinkError('Undefined subjectgroup "%s"' % sg_id)
             self.errors.append(err)
@@ -586,6 +589,7 @@ class Observation(Entity):
         if aw_id is None:
             self.analysis_workflow = None
         elif aw_id not in self.pub.entities['AnalysisWorkflow']:
+            self.fields['analysisworkflow'].reset()
             self.analysis_workflow = None
             err = errors.LinkError('Undefined analysis workflow "%s"' % aw)
             self.errors.append(err)
@@ -594,11 +598,14 @@ class Observation(Entity):
             self.analysis_workflow = aw
         self.data = []
         if self['data']:
-            for d_id in self['data']:
+            d_ids = list(self['data'])
+            self.fields['data'].reset()
+            for d_id in d_ids:
                 if d_id not in self.pub.entities['Data']:
                     err = errors.LinkError('Undefined data "%s"' % d_id)
                     self.errors.append(err)
                 else:
+                    self.fields['data'].set(d_id)
                     d = self.pub.entities['Data'][d_id]
                     self.data.append(d)
                     d.observations.append(self)
@@ -770,17 +777,22 @@ class ModelApplication(Entity):
         if m_id is None:
             self.model = None
         elif m_id not in self.pub.entities['Model']:
+            self.fields['model'].reset()
             self.model = None
             self.errors.append(errors.LinkError('Undefined model "%s"' % m_id))
         else:
             self.model = self.pub.entities['Model'][m_id]
         self.observations = []
         if self['observation']:
-            for o_id in self['observation']:
+            # make a copy
+            o_ids = list(self['observation'])
+            self.fields['observation'].reset()
+            for o_id in o_ids:
                 if o_id not in self.pub.entities['Observation']:
                     err = errors.LinkError('Undefined observation "%s"' % o_id)
                     self.errors.append(err)
                 else:
+                    self.fields['observation'].set(o_id)
                     obs = self.pub.entities['Observation'][o_id]
                     self.observations.append(obs)
                     obs.model_applications.append(self)
@@ -881,6 +893,7 @@ class Result(Entity):
         if ma_id is None:
             self.model_application = None
         elif ma_id not in self.pub.entities['ModelApplication']:
+            self.fields['modelapplication'].reset()
             self.model_application = None
             err = errors.LinkError('Undefined model application "%s"' % ma_id)
             self.errors.append(err)

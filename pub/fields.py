@@ -4,6 +4,10 @@ class BaseField:
 
     def __init__(self, display_name):
         self.display_name = display_name
+        self.reset()
+        return
+
+    def reset(self):
         self.value = None
         return
 
@@ -65,7 +69,6 @@ class MultiField(BaseField):
 
     def __init__(self, display_name):
         BaseField.__init__(self, display_name)
-        self.value = None
         return
 
     def set(self, value):
