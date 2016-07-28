@@ -716,11 +716,16 @@ class ModelApplication(Entity):
         for row in cursor:
             row_dict = dict(zip(cols, row))
             obj = ModelApplication(pub, row_dict['id'])
-            obj.fields['observation'].set(row_dict['observation'])
             obj.fields['model'].set(row_dict['model'])
             obj.fields['url'].set(row_dict['url'])
             obj.fields['software'].set(row_dict['software'])
             d[row_dict['id']] = obj
+        query = """SELECT observation, model_application 
+                     FROM observationXmodel_application 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        for (observation_id, model_application_id) in cursor:
+            d[model_application_id].fields['observation'].set(observation_id)
         ModelApplication._get_annotation_ids_from_db(pub, d, cursor)
         ModelApplication._get_errors_from_db(pub, d, cursor)
         return d
@@ -753,7 +758,9 @@ class ModelApplication(Entity):
         query = """INSERT INTO observationXmodel_application 
                                (publication, observation, model_application) 
                    VALUES (%s, %s, %s)"""
+        print '=', self.id
         for obs in self.observations:
+            print obs.id
             params = (self.pub.pmid, obs.id, self.id)
             cursor.execute(query, params)
         self._insert_annotations(cursor)
@@ -817,7 +824,6 @@ class Result(Entity):
             obj = Result(pub, row_dict['id'])
             obj.fields['modelapplication'].set(row_dict['model_application'])
             obj.fields['value'].set(row_dict['value'])
-            obj.fields['variable'].set(row_dict['variable'])
             obj.fields['f'].set(row_dict['f'])
             obj.fields['p'].set(row_dict['p'])
             obj.fields['interpretation'].set(row_dict['interpretation'])
