@@ -58,8 +58,6 @@ class Publication:
     def _clear_pmid(cls, pmid):
         with database.connect() as db:
             with db.cursor() as c:
-                query = "DELETE FROM entity_error WHERE publication = %s"
-                c.execute(query, (pmid, ))
                 query = "DELETE FROM entity_annotation WHERE publication = %s"
                 c.execute(query, (pmid, ))
                 classes = entities.values()
