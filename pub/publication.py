@@ -123,16 +123,34 @@ class Publication:
         with database.connect() as db:
             with db.cursor() as c:
                 for (entity_type, cls) in entities.iteritems():
-                    if entity_type != 'SubjectGroup':
+                    if entity_type not in ('SubjectGroup', 
+                                           'AcquisitionInstrument', 
+                                           'Data', 
+                                           'Observation', 
+                                           'Model', 
+                                           'AnalysisWorkflow', 
+                                           'Acquisition'):
                         continue
                     self.entities[entity_type] = cls._get_from_db(self, c)
         for et in self.entities:
-            if et != 'SubjectGroup':
+            if et not in ('SubjectGroup', 
+                          'AcquisitionInstrument', 
+                          'Data', 
+                          'Observation', 
+                          'Model', 
+                          'AnalysisWorkflow', 
+                          'Acquisition'):
                 continue
             for ent in self.entities[et].itervalues():
                 ent.set_related()
         for et in self.entities:
-            if et != 'SubjectGroup':
+            if et not in ('SubjectGroup', 
+                          'AcquisitionInstrument', 
+                          'Data', 
+                          'Observation', 
+                          'Model', 
+                          'AnalysisWorkflow', 
+                          'Acquisition'):
                 continue
             for ent in self.entities[et].itervalues():
                 ent.score()

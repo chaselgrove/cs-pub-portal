@@ -97,7 +97,7 @@ class SubjectGroup(Entity):
     @classmethod
     def _get_from_db(cls, pub, cursor):
         d = {}
-        query = """SELECT id, diagnosis, n_subjects, age_mean, age_sd 
+        query = """SELECT * 
                      FROM subject_group 
                     WHERE publication = %s"""
         cursor.execute(query, (pub.pmid, ))
@@ -149,6 +149,26 @@ class AcquisitionInstrument(Entity):
 
     table = 'acquisition_instrument'
 
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM acquisition_instrument 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = AcquisitionInstrument(pub, row_dict['id'])
+            obj.fields['type'].set(row_dict['type'])
+            obj.fields['location'].set(row_dict['location'])
+            obj.fields['field'].set(row_dict['field'])
+            obj.fields['manufacturer'].set(row_dict['manufacturer'])
+            obj.fields['model'].set(row_dict['model'])
+            d[row_dict['id']] = obj
+        AcquisitionInstrument._get_annotation_ids_from_db(pub, d, cursor)
+        return d
+
     def _insert(self, cursor):
         query = """INSERT INTO acquisition_instrument (publication, 
                                                        id, 
@@ -196,6 +216,34 @@ class Acquisition(Entity):
                   ('nexcitations', Field, 'N Excitations'))
 
     table = 'acquisition'
+
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM acquisition 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = Acquisition(pub, row_dict['id'])
+            val = row_dict['acquisition_instrument']
+            obj.fields['acquisitioninstrument'].set(val)
+            obj.fields['type'].set(row_dict['type'])
+            obj.fields['nslices'].set(row_dict['n_slice'])
+            obj.fields['prep'].set(row_dict['prep'])
+            obj.fields['tr'].set(row_dict['tr'])
+            obj.fields['te'].set(row_dict['te'])
+            obj.fields['ti'].set(row_dict['ti'])
+            obj.fields['flipangle'].set(row_dict['flip_angle'])
+            obj.fields['fov'].set(row_dict['fov'])
+            obj.fields['slicethickness'].set(row_dict['slice_thickness'])
+            obj.fields['matrix'].set(row_dict['matrix'])
+            obj.fields['nexcitations'].set(row_dict['n_excitations'])
+            d[row_dict['id']] = obj
+        Acquisition._get_annotation_ids_from_db(pub, d, cursor)
+        return d
 
     def _insert(self, cursor):
         query = """INSERT INTO acquisition (publication, 
@@ -262,6 +310,25 @@ class Data(Entity):
                   ('subjectgroup', Field, 'Subject Group'))
 
     table = 'data'
+
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM data 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = Data(pub, row_dict['id'])
+            obj.fields['url'].set(row_dict['url'])
+            obj.fields['doi'].set(row_dict['doi'])
+            obj.fields['acquisition'].set(row_dict['acquisition'])
+            obj.fields['subjectgroup'].set(row_dict['subject_group'])
+            d[row_dict['id']] = obj
+        Data._get_annotation_ids_from_db(pub, d, cursor)
+        return d
 
     @classmethod
     def _clear_pmid(cls, pmid, cursor):
@@ -336,6 +403,27 @@ class AnalysisWorkflow(Entity):
 
     table = 'analysis_workflow'
 
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM analysis_workflow 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = AnalysisWorkflow(pub, row_dict['id'])
+            obj.fields['method'].set(row_dict['method'])
+            obj.fields['methodurl'].set(row_dict['methodurl'])
+            obj.fields['software'].set(row_dict['software'])
+            obj.fields['softwarenitrcid'].set(row_dict['software_nitrc_id'])
+            obj.fields['softwarerrid'].set(row_dict['software_rrid'])
+            obj.fields['softwareurl'].set(row_dict['software_url'])
+            d[row_dict['id']] = obj
+        AnalysisWorkflow._get_annotation_ids_from_db(pub, d, cursor)
+        return d
+
     def _insert(self, cursor):
         query = """INSERT INTO analysis_workflow (publication, 
                                                   id, 
@@ -379,6 +467,29 @@ class Observation(Entity):
                   ('measure', Field, 'Measure'))
 
     table = 'observation'
+
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM observation 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = Observation(pub, row_dict['id'])
+            obj.fields['analysisworkflow'].set(row_dict['analysis_workflow'])
+            obj.fields['measure'].set(row_dict['measure'])
+            d[row_dict['id']] = obj
+        query = """SELECT observation, data 
+                     FROM dataXobservation 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        for (observation_id, data_id) in cursor:
+            d[observation_id].fields['data'].set(data_id)
+        Observation._get_annotation_ids_from_db(pub, d, cursor)
+        return d
 
     @classmethod
     def _clear_pmid(cls, pmid, cursor):
@@ -456,6 +567,28 @@ class Model(Entity):
                   ('variable', MultiField, 'Variables'))
 
     table = 'model'
+
+    @classmethod
+    def _get_from_db(cls, pub, cursor):
+        d = {}
+        query = """SELECT * 
+                     FROM model 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        cols = [ el[0] for el in cursor.description ]
+        for row in cursor:
+            row_dict = dict(zip(cols, row))
+            obj = Model(pub, row_dict['id'])
+            obj.fields['type'].set(row_dict['type'])
+            d[row_dict['id']] = obj
+        query = """SELECT model, variable 
+                     FROM model_variable 
+                    WHERE publication = %s"""
+        cursor.execute(query, (pub.pmid, ))
+        for (model_id, variable) in cursor:
+            d[model_id].fields['variable'].set(variable)
+        Model._get_annotation_ids_from_db(pub, d, cursor)
+        return d
 
     @classmethod
     def _clear_pmid(cls, pmid, cursor):
