@@ -28,7 +28,7 @@
              <div class="error">{{ error.render() }}</div>
          {% endfor %}
         <ul class="fields">
-            {% for field in ent.fields.itervalues() %}
+            {% for field in ent.fields.values() %}
                 <li>{{ field.display_name }}: {{ field.render_value() }}</li>
             {% endfor %}
         </ul>

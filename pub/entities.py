@@ -165,7 +165,7 @@ class SubjectGroup(Entity):
     def score(self):
         self.points.append((5, 'Existential credit'))
         # check for missing fields
-        for (name, field) in self.fields.iteritems():
+        for (name, field) in self.fields.items():
             if not field.value:
                 self.points.append((-1, 'Missing %s' % name))
         return
@@ -225,7 +225,7 @@ class AcquisitionInstrument(Entity):
     def score(self):
         self.points.append((7, 'Existential credit'))
         # check for missing fields
-        for (name, field) in self.fields.iteritems():
+        for (name, field) in self.fields.items():
             if not field.value:
                 if name == 'field':
                     self.points.append((-2, 'Missing %s' % name))
@@ -763,9 +763,7 @@ class ModelApplication(Entity):
         query = """INSERT INTO observationXmodel_application 
                                (publication, observation, model_application) 
                    VALUES (%s, %s, %s)"""
-        print '=', self.id
         for obs in self.observations:
-            print obs.id
             params = (self.pub.pmid, obs.id, self.id)
             cursor.execute(query, params)
         self._insert_annotations(cursor)

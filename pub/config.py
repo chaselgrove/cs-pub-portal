@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 
 _config = None
 
@@ -7,10 +7,10 @@ def set_config(fname):
     _config = fname
     return
 
-class Config(ConfigParser.ConfigParser):
+class Config(configparser.ConfigParser):
 
     def __init__(self):
-        ConfigParser.ConfigParser.__init__(self)
+        configparser.ConfigParser.__init__(self)
         self.read(_config)
         return
 

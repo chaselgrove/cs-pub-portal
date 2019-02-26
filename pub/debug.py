@@ -1,15 +1,15 @@
 import os
 
-if not os.environ.has_key('CSPUB_DEBUG'):
+if not 'CSPUB_DEBUG' in os.environ:
     _debug_flag = False
-elif not os.environ['CSPUB_DEBUG']:
+elif not 'CSPUB_DEBUG' in os.environ:
     _debug_flag = False
 else:
     _debug_flag = True
 
 def debug(message):
     if _debug_flag:
-        print message
+        print(message)
     return
 
 def set_debug(val):

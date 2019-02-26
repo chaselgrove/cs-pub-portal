@@ -18,7 +18,6 @@ def index():
     set_env()
     id = flask.request.args.get('id')
     if id:
-        id = id.strip().encode('ascii', 'replace')
         return flask.redirect(flask.url_for('publication', id=id))
     return flask.render_template('index.tmpl', 
                                  root=flask.request.script_root, 
@@ -27,7 +26,6 @@ def index():
 @app.route('/pm/<id>')
 def publication(id):
     set_env()
-    id = id.encode('ascii', 'replace')
     error = None
     publication = None
     if pub.publication.pmc_id_re.search(id):
@@ -53,7 +51,6 @@ def publication(id):
 @app.route('/reload/<pmid>')
 def reload(pmid):
     set_env()
-    pmid = pmid.encode('ascii', 'replace')
     publication = pub.Publication.get_by_pmid(pmid, True)
     url = flask.url_for('publication', id=publication.pmid)
     return flask.redirect(url)

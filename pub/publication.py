@@ -1,9 +1,9 @@
 from collections import OrderedDict
 import re
 import datetime
-import httplib
-import urllib
+import urllib.parse
 import json
+import requests
 
 from . import errors
 from .entities import *
@@ -62,9 +62,7 @@ class Publication:
                 c.execute(query, (pmid, ))
                 query = "DELETE FROM entity_annotation WHERE publication = %s"
                 c.execute(query, (pmid, ))
-                classes = entities.values()
-                classes.reverse()
-                for cls in classes:
+                for cls in reversed(entities.values()):
                     cls._clear_pmid(pmid, c)
                 query = "DELETE FROM publication_error WHERE publication = %s"
                 c.execute(query, (pmid, ))
@@ -121,13 +119,13 @@ class Publication:
         self.title = row[3]
         with database.connect() as db:
             with db.cursor() as c:
-                for (entity_type, cls) in entities.iteritems():
+                for (entity_type, cls) in entities.items():
                     self.entities[entity_type] = cls._get_from_db(self, c)
         for et in self.entities:
-            for ent in self.entities[et].itervalues():
+            for ent in self.entities[et].values():
                 ent.set_related()
         for et in self.entities:
-            for ent in self.entities[et].itervalues():
+            for ent in self.entities[et].values():
                 ent.score()
         self.errors = []
         with database.connect() as db:
@@ -150,13 +148,13 @@ class Publication:
         self._read_pubmed()
         self.timestamp = datetime.datetime.utcnow()
         self._read_annotations()
-        for ed in self.entities.itervalues():
-            for ent in ed.itervalues():
+        for ed in self.entities.values():
+            for ent in ed.values():
                 ent.set_related()
         # run all .set_related() before any .score() because some .score()s 
         # rely on other entities' cross-references
-        for ed in self.entities.itervalues():
-            for ent in ed.itervalues():
+        for ed in self.entities.values():
+            for ent in ed.values():
                 ent.score()
         with database.connect() as db:
             with db.cursor() as c:
@@ -176,8 +174,8 @@ class Publication:
                               error.__class__.__name__, 
                               error.data)
                     c.execute(query, params)
-                for ed in self.entities.itervalues():
-                    for ent in ed.itervalues():
+                for ed in self.entities.values():
+                    for ent in ed.values():
                         ent._insert(c)
                         ent.set_related()
         return
@@ -185,8 +183,8 @@ class Publication:
     def get_scores(self):
         s = 0
         max = 0
-        for ed in self.entities.itervalues():
-            for ent in ed.itervalues():
+        for ed in self.entities.values():
+            for ent in ed.values():
                 (es, emax) = ent.get_scores()
                 s += es
                 max += emax
@@ -201,17 +199,15 @@ class Publication:
 
     def _get_pubmed_data(self, term):
         key = 'pubmed:%s' % term
-        conn = httplib.HTTPSConnection('www.ncbi.nlm.nih.gov')
         params = {'report': 'medline', 'format': 'text', 'term': term}
-        url = '/pubmed/?%s' % urllib.urlencode(params)
-        conn.request('GET', url)
-        response = conn.getresponse()
-        if response.status != 200:
-            msg = 'PubMed response status %d' % response.status
+        base_url = 'https://www.ncbi.nlm.nih.gov/pubmed'
+        url = '%s/?%s' % (base_url, urllib.parse.urlencode(params))
+        response = requests.get(url)
+        if response.status_code != 200:
+            msg = 'PubMed response status %d' % response.status_code
             raise PubMedError(msg)
-        data = response.read()
-        conn.close()
-        return data
+        response.close()
+        return response.text
 
     def _read_pubmed(self):
         """get the pubmed entry
@@ -251,16 +247,14 @@ class Publication:
 
     def _get_hypothesis_data(self, url):
         key = 'hypothesisurl:%s' % url
-        conn = httplib.HTTPSConnection('hypothes.is')
-        url = '/api/search?%s' % urllib.urlencode({'uri': url})
-        conn.request('GET', url, '', {'Accept': 'application/json'})
-        response = conn.getresponse()
-        if response.status != 200:
-            msg = 'hypothes.is response status %d' % response.status
+        base_url = 'https://hypothes.is/api/search'
+        url = '%s?%s' % (base_url, urllib.parse.urlencode({'uri': url}))
+        response = requests.get(url, headers={'Accept': 'application/json'})
+        if response.status_code != 200:
+            msg = 'hypothes.is response status %d' % response.status_code
             raise HypothesisError(msg)
-        data = response.read()
-        conn.close()
-        return data
+        response.close()
+        return response.text
 
     def _read_annotations(self):
 
